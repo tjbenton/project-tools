@@ -1,0 +1,3 @@
+extends:
+  - './node_modules/lint-rules/eslint/base.js'
+  - './node_modules/lint-rules/eslint/esnext.js'

@@ -1,0 +1,14 @@
+{
+  "name": "${project_name}",
+  "version": "0.0.0",
+  "description": "Contains all the projects for ${project_name}",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "${author_name} <${author_email}>",
+  "license": "ISC",
+  "devDependencies": {
+    "lint-rules": "github:ma/lint-rules",
+    "project-tools": "github:ma/project-tools#${version}"
+  }
+}

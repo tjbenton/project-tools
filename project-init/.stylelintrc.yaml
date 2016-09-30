@@ -1,0 +1,2 @@
+extends:
+  - 'lint-rules/stylelint/index.js'

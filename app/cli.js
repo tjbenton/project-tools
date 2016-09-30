@@ -78,10 +78,15 @@ export default function cli() {
     .action(call(project.watch))
 
   commander
-    .command('list') //  [name]ls
-    // .option()
-    // .description()
-    .action(call(project.list))
+    .command('list [name]')
+    .alias('ls')
+    .description('this will output a list of the projects or if a name is passed it will return the name if it exists and nothing if it does')
+    .action(async (name) => {
+      const list = await project.list(name)
+      if (list.length) {
+        console.log(list.join('\n'))
+      }
+    })
 
 
   commander

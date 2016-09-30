@@ -9,7 +9,7 @@ let test = ava.serial.group('Project -')
 
 
 test('functions exist', (t) => {
-  const methods = [ 'init', 'dirs', 'create', 'build', 'start', 'stop', 'watch', 'list', 'use', 'publish', 'translate' ]
+  const methods = [ 'init', 'create', 'build', 'start', 'stop', 'watch', 'list', 'use', 'publish', 'translate' ]
 
   methods.forEach((method) => {
     t.truthy(typeof Project.prototype[method] === 'function', `${method} is defined`)
@@ -54,8 +54,22 @@ test.serial.group('watch', (test) => {
   test.todo('watch')
 })
 
-test.serial.group('list', (test) => { // ls
-  test.todo('list')
+
+test('list', async (t) => { // ls
+  const root = path.join(__dirname, 'project-list-test')
+  const project = new Project({ root })
+
+  const folders = [ 'one', 'two', 'three' ]
+  // create fake folders
+  await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
+
+  t.deepEqual(await project.list(), folders.sort(), `should be ${folders}`)
+  t.is((await project.list('o'))[0], 'one', 'should return `one`')
+  t.is((await project.list('on'))[0], 'one', 'should return `one`')
+  t.is((await project.list('one'))[0], 'one', 'should return `one`')
+  t.deepEqual(await project.list('t'), folders.slice(1).sort(), 'should return `[ \'three\', \'two\' ]`')
+
+  await fs.remove(root)
 })
 
 test.serial.group('use', (test) => { // save

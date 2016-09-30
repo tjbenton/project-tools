@@ -32,7 +32,7 @@
     "bdd-stdin": "^0.2.0",
     "docs-core": "0.0.0-alpha-5.5",
     "docs-theme-default": "0.0.0-alpha-5.5",
-    "nixt": "^0.5.0",
+    "nixt": "^0.5.0"
   },
   "ava": {
     "files": [

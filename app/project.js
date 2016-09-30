@@ -3,6 +3,7 @@ import fs from 'fs-extra-promisify'
 import { version } from '../package.json'
 import { exec } from './utils'
 import to from 'to-js'
+import globby from 'globby'
 
 export default class Project {
   constructor(options = {}) {
@@ -29,10 +30,6 @@ export default class Project {
     await fs.outputFile(`${location}/package.json`, file, { spaces: 2 })
   }
 
-  async projects() {
-    // asy
-  }
-
   async create() {
     console.log('create');
   }
@@ -53,8 +50,17 @@ export default class Project {
     console.log('watch');
   }
 
-  async list() {
-    console.log('list');
+  ///# @name list
+  ///# @description This will return all the projects that currently exist in the repo
+  ///# @arg {string} name - all or part of the project name
+  ///# @async
+  ///# @return {array} - projects
+  async list(name) {
+    const list = await globby('*', { cwd: path.join(this.root, 'projects') })
+    if (name) {
+      return list.filter((item) => item.indexOf(name) === 0)
+    }
+    return list
   }
 
   async use() {

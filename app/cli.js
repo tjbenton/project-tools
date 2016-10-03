@@ -50,9 +50,30 @@ export default function cli() {
 
   commander
     .command('create [name]')
-    // .option()
-    // .description()
-    .action(call(project.create))
+    .description('creates a new project for you and sets it up the way you want')
+    .action(async (name) => {
+      let count = 0
+      const getName = async (str) => {
+        if (count++ >= 10) {
+          console.log('\n\n' + to.normalize(`
+            try running ${chalk.green.bold('project list')} to see a list of the
+            projects that have already been created
+          `) + '\n')
+          return
+        }
+        let result = str ? str : await question('What\'s the name of your project?')
+        let list = await project.list(result)
+        if (list.length) {
+          console.log(`${chalk.blue.bold(result)} already exists`);
+          return await getName()
+        }
+        return result
+      }
+      name = await getName(name)
+
+      await project.create(name)
+      console.log(`${chalk.green(name)} was successfully created`)
+    })
 
   commander
     .command('build [name]')

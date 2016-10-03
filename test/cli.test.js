@@ -40,8 +40,39 @@ test.group('init', (test) => {
   })
 })
 
-test.serial.group('create', (test) => {
-  test.todo('create')
+test.group('create', (test) => {
+  const root = path.join(__dirname, 'cli-create-test')
+  const folders = [ 'one', 'two', 'three' ].sort()
+  const base = nixt().cwd(root).base('../../bin/project ')
+
+  test.beforeEach(async () => {
+    // create fake folders
+    await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
+  })
+
+  test.cb('with no arguments', (t) => {
+    const name = 'no-arguments'
+    base.clone()
+      .run('create')
+      .on(/What's the name of your project\?/).respond(name + enter)
+      .exist(path.join(root, 'projects', name))
+      .end(t.end)
+  })
+
+  test.only.cb('project already exists', (t) => {
+    const name = 'already-exists'
+    base.clone()
+      .exec('ls ./**/*')
+      .run('create one')
+      .stdout(/one already exists\n/)
+      .on(/What's the name of your project\?/).respond(name + enter)
+      .exist(path.join(root, 'projects', name))
+      .end(t.end)
+  })
+
+  test.afterEach('', async () => {
+    await fs.remove(root)
+  })
 })
 
 test.serial.group('build', (test) => {

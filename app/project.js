@@ -1,14 +1,50 @@
 import path from 'path'
 import fs from 'fs-extra-promisify'
+import { forEach } from 'async-array-methods'
 import { version } from '../package.json'
 import { exec } from './utils'
-import to from 'to-js'
+import { is } from 'to-js'
 import globby from 'globby'
+////
+/// @name Project
+/// @author Tyler Benton
+/// @page project
+////
 
+/// @name Project
+/// @description
+/// This class is the main functionality of the project cli
+/// @class
 export default class Project {
+  ///# @constructor
+  ///# @arg {object}
+  ///# defaults
+  ///# ```js
+  ///# // the base folder for the project
+  ///# options.root = projcess.cwd()
+  ///#
+  ///# // determins if the config file is used or not
+  ///# options.projectrc = true
+  ///#
+  ///# // path to the config file
+  ///# options.config = '.projectrc.js'
+  ///# ```
   constructor(options = {}) {
-    this.options = options
+    this.options = Object.assign({
+      root: process.cwd(),
+      config: '.projectrc.js',
+      create: [ 'index.scss', 'index.js', 'index.jade' ],
+    }, options)
     this.root = this.options.root = options.root || process.cwd()
+    if (this.options.projectrc !== false) {
+      const js_file = path.join(this.root, this.options.config)
+      try {
+        this.options = Object.assign(this.options, require(js_file) || {})
+      } catch (a) {
+        // do nothing
+      }
+    }
+
     this.current_path = path.join(__dirname, '..', 'PROJECT')
     try {
       this.current = fs.readFileSync(this.current_path) + ''
@@ -36,8 +72,31 @@ export default class Project {
     await fs.outputFile(`${location}/package.json`, file, { spaces: 2 })
   }
 
-  async create() {
-    console.log('create');
+  ///# @name create
+  ///# @arg {string} name - the name of the project to be created
+  ///# @async
+  async create(name) {
+    let { create } = this.options
+    if (!is.string(name)) {
+      throw new Error('name must be a string')
+      return
+    }
+    const dir = path.join(this.root, 'projects', name)
+    await fs.ensureDir(dir)
+    if (is.function(create)) {
+      await create(name, dir)
+    } else if (is.array(create)) {
+      await forEach(create, async (str) => {
+        str = path.join(this.root, 'projects', name, str)
+        if (str.slice(-1) === '/') {
+          await fs.ensureDir(str)
+        }
+        await fs.ensureFile(str)
+      })
+    } else if (is.string(create)) {
+      create = path.isAbsolute(create) ? create : path.join(this.root, create)
+      await fs.copy(create, path.join(this.root, 'projects', name))
+    }
   }
 
   async build() {
@@ -79,7 +138,7 @@ export default class Project {
   ///# @returns {string, undefined} - the argument that was passed
   async use(name) {
     if (!name || typeof name !== 'string') {
-      console.error('you must pass a string to use')
+      throw new Error('you must pass a string to use')
       return
     }
 

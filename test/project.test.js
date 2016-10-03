@@ -2,6 +2,7 @@
 
 import ava from 'ava-spec'
 import fs from 'fs-extra-promisify'
+import globby from 'globby'
 import path from 'path'
 import Project from '../dist/project.js'
 let test = ava.serial.group('Project -')
@@ -37,7 +38,57 @@ test('init', async (t) => {
 })
 
 
-test.serial.group('create', (test) => {
+test.group('create', (test) => {
+  const root = path.join(__dirname, 'project-create-test')
+  const files = [
+    'styles.scss',
+    'index.js',
+    'index.jade'
+  ].sort()
+  test.before(async () => {
+    await fs.remove(root)
+  })
+  test('no arguments, no create option', async (t) => {
+    const project = new Project()
+    try {
+      await project.create()
+      t.fail('expected failure')
+    } catch (e) {
+      t.pass('failed correctly')
+    }
+  })
+
+  test('with name, no create option', async (t) => {
+    const project = new Project({ root })
+    const name = 'project-1'
+    await project.create(name)
+    t.truthy(await fs.exists(path.join(root, 'projects', name)), 'project was created')
+  })
+
+  test.group('create option as a string', (test) => {
+    test.before(async () => {
+      await Promise.all(files.map((file) => fs.ensureFile(path.join(root, 'base', file))))
+    })
+
+    test(async (t) => {
+      const project = new Project({ root, create: 'base' })
+      const name = 'project-2'
+
+      await project.create(name)
+      t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name) }), files)
+    })
+  })
+
+  test('create option as a array', async (t) => {
+    const project = new Project({ root, create: files })
+    const name = 'project-3'
+    await project.create(name)
+    t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name) }), files)
+  })
+
+  test.after(async () => {
+    await fs.remove(root)
+  })
   test.todo('create')
 })
 

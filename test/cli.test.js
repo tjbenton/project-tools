@@ -1,36 +1,43 @@
 /* eslint-disable id-length, no-shadow */
-/* eslint-disable */
 import ava from 'ava-spec'
 const test = ava.serial.group('CLI -')
 import nixt from 'nixt'
 import path from 'path'
 import fs from 'fs-extra-promisify'
-const project = (args) => `../bin/project ${args}`
 
 const enter = '\n'
 
-test.serial.group('init', (test) => {
-  test.todo('init')
-//   test.cb('no initial arguments', (t) => {
-//     const name = 'project-init-test'
-//     nixt()
-//       .cwd(__dirname)
-//       .run(project('init'))
-//       .respond(enter)
-//       .on('? What\'s the name of your repo?')
-//         .respond(name + enter)
-//       // .stdout(`? Where do you want this repo to be located? (${name})`)
-//       .on(`? Where do you want this repo to be located? (${name})`)
-//         .respond(enter)
-//       .on(`? About to create project repo in ${path.join(process.cwd(), name)}:
-// Is this ok? (Ynh)`)
-//         .respond(enter)
-//       .end((...args) => {
-//         console.log('args');
-//         console.log(args);
-//         t.end()
-//       })
-//   })
+test.group('init', (test) => {
+  const base = nixt().cwd(__dirname).base('../bin/project ')
+  const name = 'project-init-test'
+  const project_path = path.join(__dirname, name)
+
+  test.beforeEach(async () => {
+    await fs.remove(project_path)
+  })
+
+  test.cb('no initial arguments', (t) => {
+    base.clone()
+      .run('init')
+      .on(/What's the name of your repo\?/).respond(name + enter)
+      .on(/Where do you want this repo to be located\?/).respond(enter)
+      .on(/\About to create project repo in/).respond(enter)
+      .exist(project_path)
+      .end(t.end)
+  })
+
+  test.cb('name was passed', (t) => {
+    base.clone()
+      .run(`init ${name}`)
+      .on(/Where do you want this repo to be located\?/).respond(enter)
+      .on(/\About to create project repo in/).respond(enter)
+      .exist(project_path)
+      .end(t.end)
+  })
+
+  test.afterEach(async () => {
+    await fs.remove(project_path)
+  })
 })
 
 test.serial.group('create', (test) => {

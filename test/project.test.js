@@ -7,6 +7,15 @@ import Project from '../dist/project.js'
 let test = ava.serial.group('Project -')
 
 
+fs.exists = async (str) => {
+  try {
+    await fs.stat(str)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
 
 test('functions exist', (t) => {
   const methods = [ 'init', 'create', 'build', 'start', 'stop', 'watch', 'list', 'use', 'publish', 'translate' ]
@@ -22,13 +31,7 @@ test('init', async (t) => {
   const dir = path.join(__dirname, name)
 
   await project.init(name, dir)
-
-  try {
-    await fs.stat(dir)
-    t.pass(`${dir} was copied`)
-  } catch (e) {
-    t.fail(`${dir} wasn't copied`)
-  }
+  t.truthy(await fs.exists(dir), `${dir} was copied`)
 
   await fs.remove(dir)
 })

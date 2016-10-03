@@ -4,6 +4,7 @@ import to from 'to-js'
 import pkg from '../package.json'
 import Project from './project'
 import { question, confirm } from './utils'
+import chalk from 'chalk'
 
 export default function cli() {
   const root = process.cwd()
@@ -88,12 +89,45 @@ export default function cli() {
       }
     })
 
-
   commander
-    .command('use') // sa [name]ve
-    // .option()
-    // .description()
-    .action(call(project.use))
+    .command('use [name]')
+    .alias('save')
+    .description('This will store the current project you\'re working with so you don\'t have to pass a name to every other command')
+    .action(async (name) => {
+      let list = await project.list()
+      if (name && list.indexOf(name) < 0) {
+        console.log(`${chalk.bold(name)} doesn't match a project that exists`);
+        name = ''
+      }
+      if (!name) {
+        name = await question({
+          type: 'autocomplete',
+          message: 'Which project do you want to use?',
+          source(listSoFar, input) {
+            if (!input) {
+              return Promise.resolve(list)
+            }
+
+            let result = list.map((item) => {
+              const index = item.toLowerCase().indexOf(input.toLowerCase())
+              if (index < 0) {
+                return false
+              }
+              let stop = index + input.length
+
+              return item.slice(0, index) +
+                chalk.red(item.slice(index, stop)) +
+                item.slice(stop)
+            })
+            .filter(Boolean)
+
+            return Promise.resolve(result)
+          }
+        })
+      }
+
+      await project.use(name)
+    })
 
   commander
     .command('publish [name]')

@@ -72,8 +72,20 @@ test('list', async (t) => { // ls
   await fs.remove(root)
 })
 
-test.serial.group('use', (test) => { // save
-  test.todo('use')
+test('use', async (t) => { // save
+  const file = path.join(__dirname, '..', 'PROJECT')
+  await fs.remove(file)
+  const project = new Project()
+  const name = 'whoohoo'
+
+  await project.use(name)
+
+  try {
+    let contents = await fs.readFile(file)
+    t.is(contents + '', name)
+  } catch (e) {
+    t.fail('project file doesn\'t exist')
+  }
 })
 
 test.serial.group('publish', (test) => {

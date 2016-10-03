@@ -5,6 +5,8 @@
 ////
 
 import inquirer from 'inquirer'
+import autocomplete from 'inquirer-autocomplete-prompt'
+inquirer.registerPrompt('autocomplete', autocomplete)
 import to from 'to-js'
 
 

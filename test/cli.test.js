@@ -56,7 +56,7 @@ test.serial.group('watch', (test) => {
 test.group('list/ls', (test) => {
   const root = path.join(__dirname, 'cli-list-test')
   const folders = [ 'one', 'two', 'three' ].sort()
-  const base = nixt().cwd(root)
+  const base = nixt().cwd(root).base('../../bin/project ')
 
   test.beforeEach('', async () => {
     // create fake folders
@@ -65,14 +65,14 @@ test.group('list/ls', (test) => {
 
   test.cb('list', (t) => {
     base.clone()
-      .run('../../bin/project list')
+      .run('list')
       .stdout(folders.join('\n'))
       .end(t.end)
   })
 
   test.cb('ls', (t) => {
     base.clone()
-      .run('../../bin/project ls')
+      .run('ls')
       .stdout(folders.join('\n'))
       .end(t.end)
   })
@@ -80,12 +80,41 @@ test.group('list/ls', (test) => {
   test.afterEach('', async () => {
     await fs.remove(root)
   })
-
-  test.todo('ls') // ls
 })
 
-test.serial.group('use', (test) => {
-  test.todo('use') // save
+test.group('use/save', (test) => {
+  const root = path.join(__dirname, 'cli-use-test')
+  const project_file = path.join(__dirname, '..', 'PROJECT')
+  const folders = [ 'one', 'two', 'three' ].sort()
+  const base = nixt().cwd(root).base('../../bin/project ')
+
+  test.beforeEach('', async () => {
+    // create fake folders
+    await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
+    await fs.remove(project_file)
+  })
+
+  test.cb('no args', (t) => {
+    base.clone()
+      .run('use')
+      .on(/Which project do you want to use?/).respond('th\n')
+      .exist(project_file)
+      .match(project_file, 'three')
+      .end(t.end)
+  })
+
+  test.cb('the passed project is a project', (t) => {
+    base.clone()
+      .run('use one')
+      .exist(project_file)
+      .match(project_file, 'one')
+      .end(t.end)
+  })
+
+  test.afterEach('', async () => {
+    await fs.remove(root)
+    await fs.remove(project_file)
+  })
 })
 
 test.serial.group('publish', (test) => {

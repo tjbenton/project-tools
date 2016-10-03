@@ -9,6 +9,12 @@ export default class Project {
   constructor(options = {}) {
     this.options = options
     this.root = this.options.root = options.root || process.cwd()
+    this.current_path = path.join(__dirname, '..', 'PROJECT')
+    try {
+      this.current = fs.readFileSync(this.current_path) + ''
+    } catch (e) {
+      this.current = null
+    }
   }
 
   async init(project_name, location) {
@@ -63,8 +69,23 @@ export default class Project {
     return list
   }
 
-  async use() {
-    console.log('use');
+  ///# @name use
+  ///# @description
+  ///# This will create a file called `PROJECT` in the root directory of
+  ///# this project it's used if a `name` isn't passed to other commands
+  ///# @arg {string} name - The name to use
+  ///# @throws {error} - If a name isn't passed
+  ///# @async
+  ///# @returns {string, undefined} - the argument that was passed
+  async use(name) {
+    if (!name || typeof name !== 'string') {
+      console.error('you must pass a string to use')
+      return
+    }
+
+    await fs.writeFile(this.current_path, name)
+    this.current = name
+    return name
   }
 
   async publish() {

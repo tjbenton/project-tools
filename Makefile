@@ -27,7 +27,7 @@ lint:
 
 
 test:
-	ava --verbose --serial $(args)
+	ava --verbose $(args)
 
 ci:
 	make lint

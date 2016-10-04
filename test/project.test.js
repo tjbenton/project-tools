@@ -5,7 +5,7 @@ import fs from 'fs-extra-promisify'
 import globby from 'globby'
 import path from 'path'
 import Project from '../dist/project.js'
-let test = ava.serial.group('Project -')
+let test = ava.serial.group('project:')
 
 
 fs.exists = async (str) => {
@@ -18,6 +18,13 @@ fs.exists = async (str) => {
 }
 
 
+const test_root = path.join(__dirname, 'project')
+
+test.before(async () => {
+  await fs.remove(test_root)
+  await fs.ensureDir(test_root)
+})
+
 test('functions exist', (t) => {
   const methods = [ 'init', 'create', 'build', 'start', 'stop', 'watch', 'list', 'use', 'publish', 'translate' ]
 
@@ -29,7 +36,7 @@ test('functions exist', (t) => {
 test('init', async (t) => {
   const project = new Project()
   const name = 'project-init-test'
-  const dir = path.join(__dirname, name)
+  const dir = path.join(test_root, name)
 
   await project.init(name, dir)
   t.truthy(await fs.exists(dir), `${dir} was copied`)
@@ -38,16 +45,16 @@ test('init', async (t) => {
 })
 
 
-test.group('create', (test) => {
-  const root = path.join(__dirname, 'project-create-test')
+test.group('create -', (test) => {
+  const root = path.join(test_root, 'project-create-test')
   const files = [
     'styles.scss',
     'index.js',
     'index.jade'
   ].sort()
-  test.before(async () => {
-    await fs.remove(root)
-  })
+
+  test.before(async () => fs.remove(root))
+
   test('no arguments, no create option', async (t) => {
     const project = new Project()
     try {
@@ -75,7 +82,7 @@ test.group('create', (test) => {
       const name = 'project-2'
 
       await project.create(name)
-      t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name) }), files)
+      t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name, 'app') }), files)
     })
   })
 
@@ -83,69 +90,75 @@ test.group('create', (test) => {
     const project = new Project({ root, create: files })
     const name = 'project-3'
     await project.create(name)
-    t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name) }), files)
+    t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name, 'app') }), files)
   })
 
-  test.after(async () => {
-    await fs.remove(root)
-  })
+  test.after(() => fs.remove(root))
   test.todo('create')
 })
 
-test.serial.group('build', (test) => {
+test.group('build', (test) => {
   test.todo('build')
 })
 
-test.serial.group('start', (test) => {
+test.group('start', (test) => {
   test.todo('start')
 })
 
-test.serial.group('stop', (test) => {
+test.group('stop', (test) => {
   test.todo('stop')
 })
 
-test.serial.group('watch', (test) => {
+test.group('watch', (test) => {
   test.todo('watch')
 })
 
 
-test('list', async (t) => { // ls
-  const root = path.join(__dirname, 'project-list-test')
-  const project = new Project({ root })
-
+test.group('list', (test) => { // ls
+  const root = path.join(test_root, 'project-list-test')
   const folders = [ 'one', 'two', 'three' ]
-  // create fake folders
-  await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
 
-  t.deepEqual(await project.list(), folders.sort(), `should be ${folders}`)
-  t.is((await project.list('o'))[0], 'one', 'should return `one`')
-  t.is((await project.list('on'))[0], 'one', 'should return `one`')
-  t.is((await project.list('one'))[0], 'one', 'should return `one`')
-  t.deepEqual(await project.list('t'), folders.slice(1).sort(), 'should return `[ \'three\', \'two\' ]`')
+  test.before(async () => {
+    // create fake folders
+    await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
+  })
 
-  await fs.remove(root)
+  test(async (t) => {
+    const project = new Project({ root })
+    t.deepEqual(await project.list(), folders.sort(), `should be ${folders}`)
+    t.is((await project.list('o'))[0], 'one', 'should return `one`')
+    t.is((await project.list('on'))[0], 'one', 'should return `one`')
+    t.is((await project.list('one'))[0], 'one', 'should return `one`')
+    t.deepEqual(await project.list('t'), folders.slice(1).sort(), 'should return `[ \'three\', \'two\' ]`')
+  })
+
+  test.after(() => fs.remove(root))
 })
 
-test('use', async (t) => { // save
-  const file = path.join(__dirname, '..', 'PROJECT')
-  await fs.remove(file)
-  const project = new Project()
-  const name = 'whoohoo'
+test.group('use', (test) => {
+  const root = path.join(test_root, 'project-use-test')
+  const file = path.join(root, 'PROJECT')
 
-  await project.use(name)
+  test.before(() => fs.remove(root))
 
-  try {
+  test(async (t) => {
+    const project = new Project({ root })
+    const name = 'whoohoo'
+    await project.use(name)
     let contents = await fs.readFile(file)
     t.is(contents + '', name)
-  } catch (e) {
-    t.fail('project file doesn\'t exist')
-  }
+  })
+
+  test.after(() => fs.remove(file))
 })
 
-test.serial.group('publish', (test) => {
+test.group('publish', (test) => {
   test.todo('publish')
 })
 
-test.serial.group('translate', (test) => {
+test.group('translate', (test) => {
   test.todo('translate')
 })
+
+
+test.after.always(() => fs.remove(test_root))

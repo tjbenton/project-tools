@@ -1,16 +1,23 @@
 /* eslint-disable id-length, no-shadow */
 import ava from 'ava-spec'
-const test = ava.serial.group('CLI -')
+const test = ava.group('CLI:')
 import nixt from 'nixt'
 import path from 'path'
 import fs from 'fs-extra-promisify'
+const cli = nixt().base('../../../bin/project ')
+const test_root = path.join(__dirname, 'cli')
+
+test.before(async () => {
+  await fs.remove(test_root)
+  await fs.ensureDir(test_root)
+})
 
 const enter = '\n'
 
-test.group('init', (test) => {
-  const base = nixt().cwd(__dirname).base('../bin/project ')
+test.serial.group('init -', (test) => {
+  const base = nixt().cwd(test_root).base('../../bin/project ')
   const name = 'project-init-test'
-  const project_path = path.join(__dirname, name)
+  const project_path = path.join(test_root, name)
 
   test.beforeEach(async () => {
     await fs.remove(project_path)
@@ -40,10 +47,10 @@ test.group('init', (test) => {
   })
 })
 
-test.group('create', (test) => {
-  const root = path.join(__dirname, 'cli-create-test')
+test.serial.group('create -', (test) => {
+  const root = path.join(test_root, 'cli-create-test')
   const folders = [ 'one', 'two', 'three' ].sort()
-  const base = nixt().cwd(root).base('../../bin/project ')
+  const base = cli.clone().cwd(root)
 
   test.beforeEach(async () => {
     // create fake folders
@@ -59,7 +66,7 @@ test.group('create', (test) => {
       .end(t.end)
   })
 
-  test.only.cb('project already exists', (t) => {
+  test.cb('project already exists', (t) => {
     const name = 'already-exists'
     base.clone()
       .exec('ls ./**/*')
@@ -75,28 +82,28 @@ test.group('create', (test) => {
   })
 })
 
-test.serial.group('build', (test) => {
+test.group('build', (test) => {
   test.todo('build')
 })
 
-test.serial.group('start', (test) => {
+test.group('start', (test) => {
   test.todo('start')
 })
 
-test.serial.group('stop', (test) => {
+test.group('stop', (test) => {
   test.todo('stop')
 })
 
-test.serial.group('watch', (test) => {
+test.group('watch', (test) => {
   test.todo('watch')
 })
 
-test.group('list/ls', (test) => {
-  const root = path.join(__dirname, 'cli-list-test')
+test.group('list/ls -', (test) => {
+  const root = path.join(test_root, 'cli-list-test')
   const folders = [ 'one', 'two', 'three' ].sort()
-  const base = nixt().cwd(root).base('../../bin/project ')
+  const base = cli.clone().cwd(root)
 
-  test.beforeEach('', async () => {
+  test.before(async () => {
     // create fake folders
     await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
   })
@@ -104,61 +111,109 @@ test.group('list/ls', (test) => {
   test.cb('list', (t) => {
     base.clone()
       .run('list')
-      .stdout(folders.join('\n'))
+      .stdout(/one|two|three/gm)
       .end(t.end)
   })
 
   test.cb('ls', (t) => {
     base.clone()
       .run('ls')
-      .stdout(folders.join('\n'))
+      .stdout(/one|two|three/gm)
       .end(t.end)
   })
 
-  test.afterEach('', async () => {
+  test.after(async () => {
     await fs.remove(root)
   })
 })
 
-test.group('use/save', (test) => {
-  const root = path.join(__dirname, 'cli-use-test')
-  const project_file = path.join(__dirname, '..', 'PROJECT')
+test.group('use/save -', (test) => {
   const folders = [ 'one', 'two', 'three' ].sort()
-  const base = nixt().cwd(root).base('../../bin/project ')
+  const createFolders = (root) => {
+    return async () => {
+      await fs.remove(root)
+      await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
+    }
+  }
 
-  test.beforeEach('', async () => {
-    // create fake folders
-    await Promise.all(folders.map((folder) => fs.ensureDir(path.join(root, 'projects', folder))))
-    await fs.remove(project_file)
+  test.group('no-args', (test) => {
+    const root = path.join(test_root, 'cli-use-1-test')
+    const project_file = path.join(root, 'PROJECT')
+
+    test.before(createFolders(root))
+
+    test.cb((t) => {
+      cli.clone()
+        .cwd(root)
+        .run('use')
+        .on(/Which project do you want to use?/).respond('th\n')
+        .exist(project_file)
+        .match(project_file, 'three')
+        .end(t.end)
+    })
+
+    test.after(() => fs.remove(root))
   })
 
-  test.cb('no args', (t) => {
-    base.clone()
-      .run('use')
-      .on(/Which project do you want to use?/).respond('th\n')
-      .exist(project_file)
-      .match(project_file, 'three')
-      .end(t.end)
-  })
+  test.group('the passed project is a project', (test) => {
+    const root = path.join(test_root, 'cli-use-2-test')
+    const project_file = path.join(root, 'PROJECT')
 
-  test.cb('the passed project is a project', (t) => {
-    base.clone()
-      .run('use one')
-      .exist(project_file)
-      .match(project_file, 'one')
-      .end(t.end)
-  })
+    test.before(createFolders(root))
 
-  test.afterEach('', async () => {
-    await fs.remove(root)
-    await fs.remove(project_file)
+    test.cb((t) => {
+      cli.clone()
+        .cwd(root)
+        .run('use one')
+        .exist(project_file)
+        .match(project_file, 'one')
+        .end(t.end)
+    })
+
+    test.after(() => fs.remove(root))
   })
 })
 
-test.serial.group('publish', (test) => {
+test.group('current -', (test) => {
+  test.group('no current', (test) => {
+    const root = path.join(test_root, 'cli-current-no-current-test')
+
+    test.before(() => fs.ensureDir(root))
+
+    test.cb((t) => {
+      cli.clone()
+        .cwd(root)
+        .run('current')
+        .stdout(/No current project/)
+        .end(t.end)
+    })
+
+    test.after(() => fs.remove(root))
+  })
+
+  test.group('has current', (test) => {
+    const root = path.join(test_root, 'cli-current-test')
+
+    test.before(() => fs.outputFile(path.join(root, 'PROJECT'), 'current-test'))
+
+    test.cb((t) => {
+      cli.clone()
+        .cwd(root)
+        .run('current')
+        .stdout(/current-test/)
+        .end(t.end)
+    })
+
+    test.after(() => fs.remove(root))
+  })
+})
+
+test.group('publish', (test) => {
   test.todo('publish')
 })
 
-test.serial.group('translate', (test) => {
+test.group('translate', (test) => {
   test.todo('translate')
 })
+
+test.after.always(() => fs.remove(test_root))

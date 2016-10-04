@@ -1,12 +1,17 @@
 /* eslint-disable id-length, no-shadow */
 
 import ava from 'ava-spec'
-const test = ava.serial.group('utils -')
-import { question, confirm, exec } from '../dist/utils.js'
+const test = ava.serial.group('utils:')
+import {
+  question,
+  confirm,
+  exec,
+  unquote,
+} from '../dist/utils.js'
 import stdin from 'bdd-stdin'
 const keys = Object.assign({ enter: '\n', space: ' ' }, stdin.keys)
 
-test.group('question', (test) => {
+test.group('question -', (test) => {
   test('no input', async (t) => {
     try {
       await question()
@@ -28,7 +33,7 @@ test.group('question', (test) => {
   })
 })
 
-test.serial.group('confirm', (test) => {
+test.group('confirm -', (test) => {
   test('no input', async (t) => {
     try {
       await confirm()
@@ -78,7 +83,7 @@ test.serial.group('confirm', (test) => {
   })
 })
 
-test.group('exec', (test) => {
+test.group('exec -', (test) => {
   test('echo', async (t) => {
     try {
       let result = await exec('echo \'10\'')
@@ -86,5 +91,37 @@ test.group('exec', (test) => {
     } catch (e) {
       t.fail('exec should be 10')
     }
+  })
+})
+
+test.group('unquote -', (test) => {
+  test('none', (t) => {
+    const str = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim, aut.'
+    t.is(unquote(str), str)
+  })
+
+  test('ends not quoted', (t) => {
+    const str = 'Lorem ipsum dolor\' sit amet, consectetur adipisicing elit. Enim, aut.'
+    t.is(unquote(str), str)
+  })
+
+  test('single', (t) => {
+    const str = '\'Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim, aut.\''
+    t.is(unquote(str), str.slice(1, str.length - 1))
+  })
+
+  test('double', (t) => {
+    const str = '"Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim, aut."'
+    t.is(unquote(str), str.slice(1, str.length - 1))
+  })
+
+  test('mixed_double', (t) => {
+    const str = '"Lorem ipsum dolor sit amet", consectetur adipisicing elit. Enim, aut."'
+    t.is(unquote(str), str.slice(1, str.length - 1))
+  })
+
+  test('mixed with single', (t) => {
+    const str = '\'Lorem ipsum dolor sit amet\', consectetur adipisicing elit. Enim, aut.\''
+    t.is(unquote(str), str.slice(1, str.length - 1))
   })
 })

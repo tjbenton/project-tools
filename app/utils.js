@@ -52,26 +52,15 @@ export function confirm(message, yes_no) {
 
   message = to.normalize(message)
 
-  let yesOrNo = (val) => {
-    if (val === true) {
-      val = 'y'
-    } else if (val === false) {
-      val = 'n'
-    } else if (typeof val === 'string') {
-      val = val[0].toLowerCase()
-    } else {
-      return -1
+  const default_option = ((val) => {
+    let char = typeof val === 'string' && val[0].toLowerCase()
+    if (yes_no === true || char === 'y') {
+      return 0
+    } else if (yes_no === false || char === 'n') {
+      return 1
     }
-
-    return [ 'y', 'n' ].indexOf(val)
-  }
-
-
-  let default_option = yesOrNo(yes_no)
-
-  if (default_option < 0) {
-    default_option = 2
-  }
+    return 2
+  })(yes_no)
 
   return question({
     type: 'expand',
@@ -117,37 +106,15 @@ export function exec(command, stdio = false, log) {
   }
   process.stdin.setEncoding('utf8')
 
-  command = command.split(' ')
-  const args = command.slice(1)
   let output = ''
-  command = command[0]
-
-
-  function unquote(str) {
-    var reg = /[\'\"]/
-    if (!str) {
-      return ''
-    }
-    if (reg.test(str.charAt(0))) {
-      str = str.substr(1)
-    }
-    if (reg.test(str.charAt(str.length - 1))) {
-      str = str.substr(0, str.length - 1)
-    }
-    return str
-  }
-
 
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { env, stdio })
+    const child = spawn('/bin/sh', [ '-c', command ], { env, stdio })
 
     if (child.stdout) {
       child.stdout.on('data', (data) => {
         data = unquote((data + '').trim()) // .split('\n').filter(Boolean).join('\n')
-        if (log) {
-          output = data
-        }
-        resolve(data)
+        output += data
       })
     }
 
@@ -160,22 +127,33 @@ export function exec(command, stdio = false, log) {
     }
 
     child.on('close', (code) => {
-      let full_command = `${command} ${args.join(' ')}`
       if (code === 0) {
-        resolve()
-        full_command = chalk.green.bold(full_command)
+        resolve(output)
+        command = chalk.green.bold(command)
       } else {
         reject(code)
-        full_command = chalk.red.bold(full_command)
+        command = chalk.red.bold(command)
       }
       if (log) {
         process.stdout.write(to.normalize(`
-          Finished: ${full_command}
+          Finished: ${command}
           ${output}
         `) + '\n')
       }
     })
   })
+}
+
+export function unquote(str) {
+  var reg = /[\'\"]/
+  if (!str) {
+    return ''
+  }
+  const length = str.length
+  return str.slice(
+    reg.test(str.charAt(0)) ? 1 : 0,
+    reg.test(str.charAt(length - 1)) ? length - 1 : length
+  )
 }
 
 

@@ -3,8 +3,10 @@ import fs from 'fs-extra-promisify'
 import { forEach } from 'async-array-methods'
 import { version } from '../package.json'
 import { exec } from './utils'
-import { is } from 'to-js'
+import to, { is } from 'to-js'
 import globby from 'globby'
+import chalk from 'chalk'
+
 ////
 /// @name Project
 /// @author Tyler Benton
@@ -34,6 +36,7 @@ export default class Project {
       root: process.cwd(),
       config: '.projectrc.js',
       create: [ 'index.scss', 'index.js', 'index.jade' ],
+      log: true,
     }, options)
     this.root = this.options.root = options.root || process.cwd()
     if (this.options.projectrc !== false) {
@@ -45,7 +48,8 @@ export default class Project {
       }
     }
 
-    this.current_path = path.join(__dirname, '..', 'PROJECT')
+    this.current_path = path.join(this.root, 'PROJECT')
+
     try {
       this.current = fs.readFileSync(this.current_path) + ''
     } catch (e) {
@@ -69,6 +73,7 @@ export default class Project {
     file = file.toString().replace(/\${([a-z_]*)}/g, (match, variable) => {
       return { project_name, author_name, author_email, version }[variable]
     })
+
     await fs.outputFile(`${location}/package.json`, file, { spaces: 2 })
   }
 
@@ -77,17 +82,19 @@ export default class Project {
   ///# @async
   async create(name) {
     let { create } = this.options
+
     if (!is.string(name)) {
-      throw new Error('name must be a string')
-      return
+      return this.log('error', 'name must be a string')
     }
+
     const dir = path.join(this.root, 'projects', name)
-    await fs.ensureDir(dir)
+    await fs.ensureDir(path.join(dir, 'dist'))
+
     if (is.function(create)) {
       await create(name, dir)
     } else if (is.array(create)) {
       await forEach(create, async (str) => {
-        str = path.join(this.root, 'projects', name, str)
+        str = path.join(this.root, 'projects', name, 'app', str)
         if (str.slice(-1) === '/') {
           await fs.ensureDir(str)
         }
@@ -95,7 +102,7 @@ export default class Project {
       })
     } else if (is.string(create)) {
       create = path.isAbsolute(create) ? create : path.join(this.root, create)
-      await fs.copy(create, path.join(this.root, 'projects', name))
+      await fs.copy(create, path.join(this.root, 'projects', name, 'app'))
     }
   }
 
@@ -123,7 +130,7 @@ export default class Project {
   async list(name) {
     const list = await globby('*', { cwd: path.join(this.root, 'projects') })
     if (name) {
-      return list.filter((item) => item.indexOf(name) === 0)
+      return list.filter((item) => item.includes(name))
     }
     return list
   }
@@ -138,13 +145,46 @@ export default class Project {
   ///# @returns {string, undefined} - the argument that was passed
   async use(name) {
     if (!name || typeof name !== 'string') {
-      throw new Error('you must pass a string to use')
-      return
+      return this.log('error', 'you must pass a string to use')
     }
 
-    await fs.writeFile(this.current_path, name)
+    await fs.outputFile(this.current_path, name)
     this.current = name
     return name
+  }
+
+  log(type, ...args) {
+    if (this.options.log || type === 'error') {
+      const types = {
+        error: 'red',
+        warning: 'yellow',
+        info: 'blue',
+        log: 'gray'
+      }
+
+      if (!to.keys(types).includes(type)) {
+        args.unshift(type)
+        type = 'log'
+      }
+
+      const now = new Date()
+      const timestamp = [ now.getHours(), now.getMinutes(), now.getSeconds() ].join(':')
+
+      // print the current time.
+      let stamp = this.options.timestamp ? `[${chalk.magenta(timestamp)}] ` : ''
+      if (type !== 'log') {
+        stamp += `${chalk[types[type]](type)}: `
+      }
+      if (stamp) {
+        process.stdout.write(stamp)
+      }
+
+      console[type](...args)
+
+      if (type === 'error') {
+        throw new Error(args.join('\n'))
+      }
+    }
   }
 
   async publish() {

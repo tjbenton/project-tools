@@ -30,6 +30,9 @@ export default class Project {
   ///#
   ///# // path to the config file
   ///# options.config = '.projectrc.js'
+  ///#
+  ///# // this will check to make sure that the docker app is running
+  ///# options.dockerCheck = true
   ///# ```
   constructor(options = {}) {
     this.options = Object.assign({
@@ -37,7 +40,9 @@ export default class Project {
       config: '.projectrc.js',
       create: [ 'index.scss', 'index.js', 'index.jade' ],
       log: true,
+      dockerCheck: true,
     }, options)
+
     this.root = this.options.root = options.root || process.cwd()
     if (this.options.projectrc !== false) {
       const js_file = path.join(this.root, this.options.config)
@@ -110,12 +115,115 @@ export default class Project {
     console.log('build');
   }
 
-  async start() {
-    console.log('start');
+  ///# @name start
+  ///# @description Used to start a docker container
+  ///# @arg {object} options
+  ///# ```js
+  ///# {
+  ///#   ports: [ '80:80' ],
+  ///#   env: [ 'MYSITE=marketamerica.com' ],
+  ///#   image: 'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest',
+  ///#   force: false
+  ///# }
+  ///# ```
+  ///# @async
+  async start(options = {}) {
+    if (!(await this.dockerCheck())) {
+      return
+    }
+
+    let list = this.list()
+
+    options = Object.assign({
+      ports: [ '80:80' ],
+      env: [ 'MYSITE=marketamerica.com' ],
+      image: 'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest',
+      force: false
+    }, options)
+
+    if (options.force) {
+      await this.stop(false)
+    } else if (await this.status()) {
+      return this.log('server is already running')
+    }
+
+    list = await list
+
+
+    const cmd = [
+      'docker run',
+      '--detach',
+      options.ports.map((port) => `--publish ${port}`).join(' '),
+      '--name project',
+      options.env.map((env) => `--env ${env}`).join(' '),
+      `--volume "${path.join(this.root, 'projects')}:/usr/share/nginx/html"`,
+      list.map((project) => {
+        return `--volume "${path.join(this.root, 'projects', project, 'dist')}:/usr/share/nginx/html/projects/${project}"`
+      }).join(' '),
+      `--volume "${path.join(this.root, 'logs')}:/var/log/nginx"`,
+      options.image
+    ].join(' ')
+
+    try {
+      await exec(cmd)
+      this.log('server was started')
+    } catch (e) {
+      this.log('error', e)
+    }
   }
 
-  async stop() {
-    console.log('stop');
+  ///# @name dockerCheck
+  ///# @description checks to see if the docker app is running
+  ///# @returns {boolean}
+  ///# @async
+  async dockerCheck() {
+    let apps = await exec('ps aux | grep -Eo "/Applications/[^/.]*" | grep -Eo "[^/\[^]*$"')
+
+    if (apps.split('\n').includes('Docker')) {
+      return true
+    }
+
+    this.log('error', to.normalize(`
+      The docker application needs to be running for this project to work.
+
+      With brew you can install it via ${chalk.bold.green('brew install docker')}
+      or you can install it from their application page
+      https://docs.docker.com/engine/installation/
+    `) + '\n')
+
+    return false
+  }
+
+  ///# @name status
+  ///# @description this is used to determin if the server is running or not
+  ///# @returns {boolean}
+  ///# @async
+  async status() {
+    let list = await exec('docker ps --all')
+    list = list.split('\n').slice(1).map((item) => {
+      return item.split(/\s{2,}/g).pop().trim()
+    })
+    return list.includes('project')
+  }
+
+  ///# @name stop
+  ///# @description This is used to stop the server
+  ///# @arg {boolean} log [true]
+  ///# @async
+  async stop(log = true) {
+    let exists = await this.status()
+    if (!exists) {
+      if (log) {
+        this.log('server isn\'t running')
+      }
+      return
+    }
+
+    await exec('docker rm --force project')
+
+    if (log) {
+      this.log('server was stopped')
+    }
   }
 
   async watch() {

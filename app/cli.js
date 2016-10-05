@@ -147,16 +147,41 @@ export default function cli() {
 
 
   commander
-    .command('start [name]')
-    // .option()
-    // .description()
-    .action(call(project.start))
+    .command('start')
+    .option('-p, --port <port ...>', `Add a port to use ${multiple_message}`, multiple(), [ '80:80', '443:443' ])
+    .option('-e, --env <env ...>', `Add an docker enviromental variable ${multiple_message}`, multiple(), [ 'MYSITE=marketamerica.com' ])
+    .option('-i, --image [image]', 'Sets the docker image to use', 'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest')
+    .option('-f, --force', 'force restarts the server if it already exists', false)
+    .description('This will start the docker server for the project')
+    .action(async ({ port: ports, env, image, force }) => {
+      updateOptions()
+      try {
+        await project.start({ ports, env, image, force })
+      } catch (e) {
+        project.log('error', e);
+      }
+    })
+
 
   commander
-    .command('stop [name]')
-    // .option()
-    // .description()
-    .action(call(project.stop))
+    .command('stop')
+    .action(async () => {
+      updateOptions()
+      await project.stop()
+    })
+
+
+  commander
+    .command('status')
+    .description('returns the current status of the server')
+    .action(async () => {
+      updateOptions()
+      if (await project.status()) {
+        project.log('server is running')
+        return
+      }
+      project.log(`server is ${chalk.bold('not')} running`)
+    })
 
 
   commander
@@ -181,6 +206,7 @@ export default function cli() {
       }
     })
 
+
   commander
     .command('use [name]')
     .alias('save')
@@ -191,6 +217,7 @@ export default function cli() {
 
       await project.use(name)
     })
+
 
   commander
     .command('current')

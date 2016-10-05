@@ -34,7 +34,7 @@ test('functions exist', (t) => {
 })
 
 test('init', async (t) => {
-  const project = new Project()
+  const project = new Project({ log: false })
   const name = 'project-init-test'
   const dir = path.join(test_root, name)
 
@@ -56,7 +56,7 @@ test.group('create -', (test) => {
   test.before(async () => fs.remove(root))
 
   test('no arguments, no create option', async (t) => {
-    const project = new Project()
+    const project = new Project({ log: false })
     try {
       await project.create()
       t.fail('expected failure')
@@ -66,7 +66,7 @@ test.group('create -', (test) => {
   })
 
   test('with name, no create option', async (t) => {
-    const project = new Project({ root })
+    const project = new Project({ root, log: false })
     const name = 'project-1'
     await project.create(name)
     t.truthy(await fs.exists(path.join(root, 'projects', name)), 'project was created')
@@ -78,7 +78,7 @@ test.group('create -', (test) => {
     })
 
     test(async (t) => {
-      const project = new Project({ root, create: 'base' })
+      const project = new Project({ root, create: 'base', log: false })
       const name = 'project-2'
 
       await project.create(name)
@@ -87,7 +87,7 @@ test.group('create -', (test) => {
   })
 
   test('create option as a array', async (t) => {
-    const project = new Project({ root, create: files })
+    const project = new Project({ root, create: files, log: false })
     const name = 'project-3'
     await project.create(name)
     t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name, 'app') }), files)
@@ -101,12 +101,36 @@ test.group('build', (test) => {
   test.todo('build')
 })
 
-test.group('start', (test) => {
-  test.todo('start')
-})
+const ci = process.env.CI !== 'true' ? test : test.skip
 
-test.group('stop', (test) => {
-  test.todo('stop')
+ci.serial.group('start/stop/status', (test) => {
+  const root = path.join(test_root, 'project-start-test')
+  const project = new Project({ root, log: false })
+
+  test.before(async () => {
+    await fs.remove(root)
+    await fs.ensureDir(path.join(root, 'project-1'))
+    await project.stop()
+  })
+
+  test(async (t) => {
+    try {
+      await project.start({ ports: [ '8000:80' ] })
+
+      if (await project.status()) {
+        t.pass('server started')
+      } else {
+        t.fail('server failed')
+      }
+    } catch (e) {
+      t.fail('server failed')
+    }
+  })
+
+  test.after(async () => {
+    await fs.remove(root)
+    await project.stop()
+  })
 })
 
 test.group('watch', (test) => {
@@ -124,7 +148,7 @@ test.group('list', (test) => { // ls
   })
 
   test(async (t) => {
-    const project = new Project({ root })
+    const project = new Project({ root, log: false })
     t.deepEqual(await project.list(), folders.sort(), `should be ${folders}`)
     t.is((await project.list('o'))[0], 'one', 'should return `one`')
     t.is((await project.list('on'))[0], 'one', 'should return `one`')
@@ -142,7 +166,7 @@ test.group('use', (test) => {
   test.before(() => fs.remove(root))
 
   test(async (t) => {
-    const project = new Project({ root })
+    const project = new Project({ root, log: false })
     const name = 'whoohoo'
     await project.use(name)
     let contents = await fs.readFile(file)

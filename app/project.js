@@ -2,10 +2,11 @@ import path from 'path'
 import fs from 'fs-extra-promisify'
 import { forEach } from 'async-array-methods'
 import { version } from '../package.json'
-import { exec } from './utils'
+import { exec, Logger } from './utils'
 import to, { is } from 'to-js'
 import globby from 'globby'
 import chalk from 'chalk'
+import compile from './compile'
 
 ////
 /// @name Project
@@ -17,7 +18,7 @@ import chalk from 'chalk'
 /// @description
 /// This class is the main functionality of the project cli
 /// @class
-export default class Project {
+export default class Project extends Logger {
   ///# @constructor
   ///# @arg {object}
   ///# defaults
@@ -35,12 +36,16 @@ export default class Project {
   ///# options.dockerCheck = true
   ///# ```
   constructor(options = {}) {
+    super()
     this.options = Object.assign({
       root: process.cwd(),
       config: '.projectrc.js',
       create: [ 'index.scss', 'index.js', 'index.jade' ],
       log: true,
       dockerCheck: true,
+      minify: false,
+      pretty: true,
+      sourcemaps: true,
     }, options)
 
     this.root = this.options.root = options.root || process.cwd()
@@ -62,6 +67,12 @@ export default class Project {
     }
   }
 
+  ///# @name init
+  ///# @description
+  ///# Used to create a new repo of projects
+  ///# @arg {string} project_name - The name of repo that will be created
+  ///# @arg {string} location - The path to where the project will be created
+  ///# @async
   async init(project_name, location) {
     const folder = path.resolve(`${__dirname}/../project-init`)
     const author_info = await Promise.all([
@@ -83,6 +94,8 @@ export default class Project {
   }
 
   ///# @name create
+  ///# @description
+  ///# Used to create a new project
   ///# @arg {string} name - the name of the project to be created
   ///# @async
   async create(name) {
@@ -111,8 +124,41 @@ export default class Project {
     }
   }
 
-  async build() {
-    console.log('build');
+  ///# @name build
+  ///# @description
+  ///# This will compile an entire folder of assets and output them into a dist directory
+  ///# @arg {string} name [this.current] - the name of the project to be created
+  ///# @returns {function} render
+  ///# This function accepts a glob of files that are in the root of the project that was passed
+  ///# @markup
+  ///# const project = new Project()
+  ///# project.build('project-1')
+  ///#  .then((render) => {
+  ///#    render('**/*')
+  ///#  })
+  ///# @async
+  async build(name) {
+    const root = path.join(this.root, 'projects', name || this.current, 'app')
+    const render = await compile(root, this.options)
+
+    return async (glob = '**/*') => {
+      let files = await render(path.join(root, glob), this.options)
+
+      await forEach(files, async (file) => {
+        file.path = file.path.replace(file.root, file.root.slice(0, -3) + 'dist')
+        let map = Promise.resolve()
+        if (file.map) {
+          const map_file = `${file.path}.map`
+          file.code += `\n/*# sourceMappingURL=${map_file.split('dist')[1].slice(1)} */\n`
+          map = fs.outputFile(map_file, file.map)
+        }
+
+        await Promise.all([
+          fs.outputFile(file.path, file.code),
+          map,
+        ])
+      })
+    }
   }
 
   ///# @name start
@@ -227,7 +273,7 @@ export default class Project {
   }
 
   async watch() {
-    console.log('watch');
+    console.log('watch')
   }
 
   ///# @name list
@@ -261,45 +307,11 @@ export default class Project {
     return name
   }
 
-  log(type, ...args) {
-    if (this.options.log || type === 'error') {
-      const types = {
-        error: 'red',
-        warning: 'yellow',
-        info: 'blue',
-        log: 'gray'
-      }
-
-      if (!to.keys(types).includes(type)) {
-        args.unshift(type)
-        type = 'log'
-      }
-
-      const now = new Date()
-      const timestamp = [ now.getHours(), now.getMinutes(), now.getSeconds() ].join(':')
-
-      // print the current time.
-      let stamp = this.options.timestamp ? `[${chalk.magenta(timestamp)}] ` : ''
-      if (type !== 'log') {
-        stamp += `${chalk[types[type]](type)}: `
-      }
-      if (stamp) {
-        process.stdout.write(stamp)
-      }
-
-      console[type](...args)
-
-      if (type === 'error') {
-        throw new Error(args.join('\n'))
-      }
-    }
-  }
-
   async publish() {
-    console.log('publish');
+    console.log('publish')
   }
 
   async translate() {
-    console.log('translate');
+    console.log('translate')
   }
 }

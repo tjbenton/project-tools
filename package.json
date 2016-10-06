@@ -15,17 +15,32 @@
     "async-array-methods": "^2.1.0",
     "babel-runtime": "^6.11.6",
     "chalk": "^1.1.3",
+    "chokidar": "^1.6.0",
     "commander": "^2.9.0",
+    "consolidate": "^0.14.1",
+    "cssnano": "~3.7.7",
+    "debug": "^2.2.0",
     "fs-extra-promisify": "^0.0.2",
     "globby": "^6.0.0",
     "inquirer": "^1.1.3",
     "inquirer-autocomplete-prompt": "^0.3.0",
-    "lint-rules": "git+https://git@stash.marketamerica.com/scm/ui/lint-rules.git#0.0.2",
+    "js-beautify": "~1.6.4",
+    "less": "^2.7.1",
+    "lint-rules": "git+https://git@stash.marketamerica.com/scm/ui/lint-rules.git#0.0.4",
+    "lodash": "^4.16.4",
+    "node-sass": "^3.10.1",
+    "parse-glob": "~3.0.4",
+    "postcss": "^5.2.4",
+    "rollup": "^0.36.1",
+    "rollup-plugin-uglify": "~1.0.1",
+    "source-map-url": "~0.4.0",
+    "stylus": "^0.54.5",
+    "templates": "^0.25.2",
     "to-js": "^0.0.6"
   },
   "devDependencies": {
     "ava": "^0.16.0",
-    "ava-spec": "^1.0.1",
+    "ava-spec": "github:tjbenton/ava-spec",
     "babel-cli": "^6.14.0",
     "babel-plugin-transform-runtime": "^6.15.0",
     "babel-preset-latest": "^6.14.0",
@@ -33,7 +48,8 @@
     "bdd-stdin": "^0.2.0",
     "docs-core": "0.0.0-alpha-5.5",
     "docs-theme-default": "0.0.0-alpha-5.5",
-    "nixt": "^0.5.0"
+    "nixt": "^0.5.0",
+    "pug": "^2.0.0-beta6"
   },
   "ava": {
     "files": [
@@ -42,7 +58,6 @@
     "source": [
       "dist/**/*"
     ],
-    "concurrency": 1,
     "failFast": true
   }
 }

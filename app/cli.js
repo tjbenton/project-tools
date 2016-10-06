@@ -32,7 +32,7 @@ export default function cli() {
     name = name ? name : await question('What\'s the name of your project?')
     let list = await project.list(name)
     if (list.length) {
-      project.log(`${chalk.blue.bold(name)} already exists`);
+      project.log(`${chalk.blue.bold(name)} already exists`)
       return await setName(null, count)
     }
     return name
@@ -43,13 +43,13 @@ export default function cli() {
     const name_exists = list.includes(name)
     if (current && project.current) {
       if (!name || name && !name_exists) {
-        project.log(`using the default project ${chalk.blue.bold(project.current)}`);
+        project.log(`using the default project ${chalk.blue.bold(project.current)}`)
         return project.current
       }
     }
 
     if (name && !name_exists) {
-      project.log(`${chalk.red.bold(name)} doesn't match a project that exists`);
+      project.log(`${chalk.red.bold(name)} doesn't match a project that exists`)
       name = ''
     }
 
@@ -86,12 +86,23 @@ export default function cli() {
   function updateOptions() {
     project.options.log = commander.log
     project.options.timestamp = commander.timestamp
+    project.options.minify = commander.minify
+    project.options.sourcemaps = commander.sourcemaps
+
+    if (commander.production) {
+      project.options.minify = true
+      project.options.sourcemaps = project.options.pretty = false
+    }
   }
 
   commander
     .usage('[command]')
     .option('-l, --no-log', 'removes all logging execept for errors')
     .option('-t, --no-timestamp', 'removes timestamps from the logs')
+    .option('-m, --minify', 'minifies all the files')
+    .option('-s, --no-sourcemaps', 'doesn\'t output sourcemaps')
+    .option('-x, --no-pretty', 'doesn\'t format the code')
+    .option('-p, --production', 'removes sourcemaps and minifies files')
     .version(pkg.version)
 
   const project = new Project()
@@ -140,13 +151,6 @@ export default function cli() {
 
 
   commander
-    .command('build [name]')
-    // .option()
-    // .description()
-    .action(call(project.build))
-
-
-  commander
     .command('start')
     .option('-p, --port <port ...>', `Add a port to use ${multiple_message}`, multiple(), [ '80:80', '443:443' ])
     .option('-e, --env <env ...>', `Add an docker enviromental variable ${multiple_message}`, multiple(), [ 'MYSITE=marketamerica.com' ])
@@ -158,7 +162,7 @@ export default function cli() {
       try {
         await project.start({ ports, env, image, force })
       } catch (e) {
-        project.log('error', e);
+        project.log('error', e)
       }
     })
 
@@ -183,10 +187,23 @@ export default function cli() {
       project.log(`server is ${chalk.bold('not')} running`)
     })
 
+  commander
+    .command('build [name]')
+    .alias('compile')
+    .description('This will build/compile the assets for the given project')
+    .action(async (name) => {
+      updateOptions()
+      name = await getName(name)
+      try {
+        await project.build(name)
+        project.log(`${chalk.green(name)} was successfully compile`)
+      } catch (e) {
+        project.log(`${chalk.red(name)} failed to compile`)
+      }
+    })
 
   commander
     .command('watch [name]')
-    // .option()
     // .description()
     .action(call(project.watch))
 
@@ -225,9 +242,9 @@ export default function cli() {
     .action(() => {
       updateOptions()
       if (project.current) {
-        project.log(project.current);
+        project.log(project.current)
       } else {
-        project.log(`No current project has been set please run ${chalk.green.bold('project use')} to set the current project`);
+        project.log(`No current project has been set please run ${chalk.green.bold('project use')} to set the current project`)
       }
     })
 

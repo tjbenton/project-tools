@@ -5,7 +5,7 @@ import nixt from 'nixt'
 import path from 'path'
 import fs from 'fs-extra-promisify'
 const cli = nixt().base('../../../bin/project ')
-const test_root = path.join(__dirname, 'cli')
+const test_root = path.join(__dirname, 'cli-fixtures')
 
 test.before(async () => {
   await fs.remove(test_root)
@@ -19,9 +19,7 @@ test.serial.group('init -', (test) => {
   const name = 'project-init-test'
   const project_path = path.join(test_root, name)
 
-  test.beforeEach(async () => {
-    await fs.remove(project_path)
-  })
+  test.beforeEach(() => fs.remove(project_path))
 
   test.cb('no initial arguments', (t) => {
     base.clone()
@@ -42,9 +40,7 @@ test.serial.group('init -', (test) => {
       .end(t.end)
   })
 
-  test.afterEach(async () => {
-    await fs.remove(project_path)
-  })
+  test.afterEach.always(async () => fs.remove(project_path))
 })
 
 test.serial.group('create -', (test) => {
@@ -77,13 +73,38 @@ test.serial.group('create -', (test) => {
       .end(t.end)
   })
 
-  test.afterEach('', async () => {
+  test.afterEach.always('', async () => {
     await fs.remove(root)
   })
 })
 
-test.group('build', (test) => {
-  test.todo('build')
+test.serial.group('build -', (test) => {
+  const root = path.join(test_root, 'cli-build-test')
+  const file = path.join(root, 'projects', 'project-1', 'app', 'js', 'index.js')
+  const expected = '(function() {\n  \'use strict\';\n\n  var foo = \'foo\';\n\n  console.log(foo);\n\n}());\n\n/*# sourceMappingURL=js/index.js.map */\n'
+  const base = cli.clone().cwd(root)
+
+  test.before(async () => {
+    await fs.outputFile(file, [
+      'var foo = \'foo\';',
+      '',
+      'console.log(foo);',
+      ''
+    ].join('\n'))
+  })
+
+  test.cb('with no arguments', (t) => {
+    const name = 'project-1'
+    base.clone()
+      .run('build')
+      .on(/Which project do you want to use\?/).respond(name + enter)
+      .exist(path.join(root, 'projects', name))
+      .match(file.replace('app', 'dist'), expected)
+      .end(t.end)
+    t.end()
+  })
+
+  test.after.always(() => fs.remove(root))
 })
 
 test.group('start', (test) => {
@@ -122,9 +143,7 @@ test.group('list/ls -', (test) => {
       .end(t.end)
   })
 
-  test.after(async () => {
-    await fs.remove(root)
-  })
+  test.after.always(() => fs.remove(root))
 })
 
 test.group('use/save -', (test) => {
@@ -152,7 +171,7 @@ test.group('use/save -', (test) => {
         .end(t.end)
     })
 
-    test.after(() => fs.remove(root))
+    test.after.always(() => fs.remove(root))
   })
 
   test.group('the passed project is a project', (test) => {
@@ -170,7 +189,7 @@ test.group('use/save -', (test) => {
         .end(t.end)
     })
 
-    test.after(() => fs.remove(root))
+    test.after.always(() => fs.remove(root))
   })
 })
 
@@ -188,7 +207,7 @@ test.group('current -', (test) => {
         .end(t.end)
     })
 
-    test.after(() => fs.remove(root))
+    test.after.always(() => fs.remove(root))
   })
 
   test.group('has current', (test) => {
@@ -204,7 +223,7 @@ test.group('current -', (test) => {
         .end(t.end)
     })
 
-    test.after(() => fs.remove(root))
+    test.after.always(() => fs.remove(root))
   })
 })
 

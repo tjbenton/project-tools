@@ -4,6 +4,8 @@ import ava from 'ava-spec'
 import fs from 'fs-extra-promisify'
 import globby from 'globby'
 import path from 'path'
+import to from 'to-js'
+import { forEach } from 'async-array-methods'
 import Project from '../dist/project.js'
 let test = ava.serial.group('project:')
 
@@ -18,7 +20,7 @@ fs.exists = async (str) => {
 }
 
 
-const test_root = path.join(__dirname, 'project')
+const test_root = path.join(__dirname, 'project-fixtures')
 
 test.before(async () => {
   await fs.remove(test_root)
@@ -93,12 +95,78 @@ test.group('create -', (test) => {
     t.deepEqual(await globby('*', { cwd: path.join(root, 'projects', name, 'app') }), files)
   })
 
-  test.after(() => fs.remove(root))
+  test.after.always(() => fs.remove(root))
   test.todo('create')
 })
 
-test.group('build', (test) => {
-  test.todo('build')
+test.group('build -', (test) => {
+  const root = path.join(test_root, 'project-build-test')
+  const types = {
+    javascript: {
+      src: path.join(root, 'projects', 'javascript-project', 'app', 'js', 'index.js'),
+      dist: path.join(root, 'projects', 'javascript-project', 'dist', 'js', 'index.js'),
+      content: [
+        'var foo = \'foo\';',
+        '',
+        'console.log(foo);',
+        ''
+      ].join('\n'),
+      expected: '(function() {\n  \'use strict\';\n\n  var foo = \'foo\';\n\n  console.log(foo);\n\n}());\n\n/*# sourceMappingURL=js/index.js.map */\n', // eslint-disable-line
+    },
+    style: {
+      src: path.join(root, 'projects', 'style-project', 'app', 'style', 'index.styl'),
+      dist: path.join(root, 'projects', 'style-project', 'dist', 'style', 'index.css'),
+      content: [
+        '$background = #00f;',
+        '',
+        '.level-1 {',
+        '  &__level-2 {',
+        '    background: $background unless @background;',
+        '  }',
+        '}',
+        '',
+      ].join('\n'),
+      expected: '.level-1__level-2 {\n  background: #00f;\n}\n\n/*# sourceMappingURL=style/index.css.map */\n',
+    },
+    template: {
+      src: path.join(root, 'projects', 'template-project', 'app', 'index.pug'),
+      dist: path.join(root, 'projects', 'template-project', 'dist', 'index.html'),
+      content: [
+        'ul',
+        '  li one',
+        '  li two',
+        '',
+      ].join('\n'),
+      expected: '<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n',
+    }
+  }
+
+  test.before(async () => {
+    await forEach(to.keys(types), (name) => {
+      const type = types[name]
+      return fs.outputFile(type.src, type.content)
+    })
+  })
+
+  to.keys(types)
+    .forEach((name) => {
+      test(name, async (t) => {
+        const type = types[name]
+        const project = new Project({ root, log: false })
+        const render = await project.build(`${name}-project`)
+        await render()
+
+        t.truthy(await fs.exists(type.dist))
+        t.is(to.string(await fs.readFile(type.dist)), type.expected)
+
+        if (name !== 'template') {
+          t.truthy(await fs.exists(type.dist + '.map'))
+        }
+        t.pass(name)
+      })
+    })
+
+  test.after.always(() => fs.remove(root))
 })
 
 const ci = process.env.CI !== 'true' ? test : test.skip
@@ -127,7 +195,7 @@ ci.serial.group('start/stop/status', (test) => {
     }
   })
 
-  test.after(async () => {
+  test.after.always(async () => {
     await fs.remove(root)
     await project.stop()
   })
@@ -156,7 +224,7 @@ test.group('list', (test) => { // ls
     t.deepEqual(await project.list('t'), folders.slice(1).sort(), 'should return `[ \'three\', \'two\' ]`')
   })
 
-  test.after(() => fs.remove(root))
+  test.after.always(() => fs.remove(root))
 })
 
 test.group('use', (test) => {
@@ -173,7 +241,7 @@ test.group('use', (test) => {
     t.is(contents + '', name)
   })
 
-  test.after(() => fs.remove(file))
+  test.after.always(() => fs.remove(file))
 })
 
 test.group('publish', (test) => {

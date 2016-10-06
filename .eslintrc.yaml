@@ -2,4 +2,4 @@ extends:
   - './node_modules/lint-rules/eslint/index.js'
 
 rules:
-  semi: 'off'
+  semi: [ 'warn', 'never' ]

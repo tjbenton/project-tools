@@ -2,11 +2,13 @@
 
 import ava from 'ava-spec'
 const test = ava.serial.group('utils:')
+import to from 'to-js'
 import {
   question,
   confirm,
   exec,
   unquote,
+  beautify
 } from '../dist/utils.js'
 import stdin from 'bdd-stdin'
 const keys = Object.assign({ enter: '\n', space: ' ' }, stdin.keys)
@@ -124,4 +126,62 @@ test.group('unquote -', (test) => {
     const str = '\'Lorem ipsum dolor sit amet\', consectetur adipisicing elit. Enim, aut.\''
     t.is(unquote(str), str.slice(1, str.length - 1))
   })
+})
+
+
+test.group('beautify -', (test) => {
+  const tests = {
+    js: {
+      actual: [
+        'function test   (    ){',
+        '  return null',
+        '  }',
+        '',
+        ''
+      ],
+      expected: [
+        'function test() {',
+        '  return null',
+        '}',
+      ]
+    },
+    css: {
+      actual: [
+        '.foo{',
+        '    background : blue;',
+        '  color : black;',
+        '}',
+      ],
+      expected: [
+        '.foo {',
+        '  background: blue;',
+        '  color: black;',
+        '}',
+      ]
+    },
+    html: {
+      actual: [
+        '<html><body>',
+        '    <p>Lorem</p>',
+        '</body></html>',
+      ],
+      expected: [
+        '<html>',
+        '<body>',
+        '  <p>Lorem</p>',
+        '</body>',
+        '</html>',
+      ]
+    },
+  }
+
+  for (let [ type, { actual, expected } ] of to.entries(tests)) {
+    expected.push('')
+    expected = expected.join('\n')
+    actual.push('')
+    actual = actual.join('\n')
+    test(type, (t) => {
+      t.is(beautify(actual, type), expected)
+    })
+  }
 })

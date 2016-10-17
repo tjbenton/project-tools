@@ -53,7 +53,9 @@
   },
   "ava": {
     "files": [
-      "test/**/*.test.js"
+      "test/project.test.js",
+      "test/utils.test.js",
+      "test/compile"
     ],
     "source": [
       "dist/**/*"

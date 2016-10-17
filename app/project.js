@@ -1,6 +1,6 @@
 import path from 'path'
 import fs from 'fs-extra-promisify'
-import { forEach } from 'async-array-methods'
+import { forEach, map } from 'async-array-methods'
 import { version } from '../package.json'
 import { exec, Logger } from './utils'
 import to, { is } from 'to-js'
@@ -124,43 +124,6 @@ export default class Project extends Logger {
     }
   }
 
-  ///# @name build
-  ///# @description
-  ///# This will compile an entire folder of assets and output them into a dist directory
-  ///# @arg {string} name [this.current] - the name of the project to be created
-  ///# @returns {function} render
-  ///# This function accepts a glob of files that are in the root of the project that was passed
-  ///# @markup
-  ///# const project = new Project()
-  ///# project.build('project-1')
-  ///#  .then((render) => {
-  ///#    render('**/*')
-  ///#  })
-  ///# @async
-  async build(name) {
-    const root = path.join(this.root, 'projects', name || this.current, 'app')
-    const render = await compile(root, this.options)
-
-    return async (glob = '**/*') => {
-      let files = await render(path.join(root, glob), this.options)
-
-      await forEach(files, async (file) => {
-        file.path = file.path.replace(file.root, file.root.slice(0, -3) + 'dist')
-        let map = Promise.resolve()
-        if (file.map) {
-          const map_file = `${file.path}.map`
-          file.code += `\n/*# sourceMappingURL=${map_file.split('dist')[1].slice(1)} */\n`
-          map = fs.outputFile(map_file, file.map)
-        }
-
-        await Promise.all([
-          fs.outputFile(file.path, file.code),
-          map,
-        ])
-      })
-    }
-  }
-
   ///# @name start
   ///# @description Used to start a docker container
   ///# @arg {object} options
@@ -204,7 +167,7 @@ export default class Project extends Logger {
       options.env.map((env) => `--env ${env}`).join(' '),
       `--volume "${path.join(this.root, 'projects')}:/usr/share/nginx/html"`,
       list.map((project) => {
-        return `--volume "${path.join(this.root, 'projects', project, 'dist')}:/usr/share/nginx/html/projects/${project}"`
+        return `--volume "${path.join(this.root, 'projects', project, 'dist')}:/usr/share/nginx/html/${project}"`
       }).join(' '),
       `--volume "${path.join(this.root, 'logs')}:/var/log/nginx"`,
       options.image
@@ -212,7 +175,7 @@ export default class Project extends Logger {
 
     try {
       await exec(cmd)
-      this.log('server was started')
+      this.log('server was started http://localhost')
     } catch (e) {
       this.log('error', e)
     }
@@ -269,6 +232,44 @@ export default class Project extends Logger {
 
     if (log) {
       this.log('server was stopped')
+    }
+  }
+
+  ///# @name build
+  ///# @description
+  ///# This will compile an entire folder of assets and output them into a dist directory
+  ///# @arg {string} name [this.current] - the name of the project to be created
+  ///# @returns {function} render
+  ///# This function accepts a glob of files that are in the root of the project that was passed
+  ///# @markup
+  ///# const project = new Project()
+  ///# project.build('project-1')
+  ///#  .then((render) => {
+  ///#    render('**/*')
+  ///#  })
+  ///# @async
+  async build(name) {
+    const root = path.join(this.root, 'projects', name || this.current, 'app')
+    const render = await compile(root, this.options)
+
+    return async (glob = '**/*') => {
+      let files = await render(path.join(root, glob), this.options)
+      return await map(files, async (file) => {
+        file.dist = file.path.replace(file.root, file.root.slice(0, -3) + 'dist')
+        let sourcemap = Promise.resolve()
+        if (file.map) {
+          const map_file = `${file.dist}.map`
+          file.code += `\n/*# sourceMappingURL=${map_file.split('dist')[1].slice(1)} */\n`
+          sourcemap = fs.outputFile(map_file, file.map)
+        }
+
+        await Promise.all([
+          fs.outputFile(file.dist, file.code),
+          sourcemap,
+        ])
+
+        return file
+      })
     }
   }
 

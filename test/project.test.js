@@ -99,6 +99,38 @@ test.group('create -', (test) => {
   test.todo('create')
 })
 
+const ci = process.env.CI !== 'true' ? test : test.skip
+
+ci.serial.group('start/stop/status', (test) => {
+  const root = path.join(test_root, 'project-start-test')
+  const project = new Project({ root, log: false })
+
+  test.before(async () => {
+    await fs.remove(root)
+    await fs.ensureDir(path.join(root, 'project-1'))
+    await project.stop()
+  })
+
+  test(async (t) => {
+    try {
+      await project.start({ ports: [ '8000:80' ] })
+
+      if (await project.status()) {
+        t.pass('server started')
+      } else {
+        t.fail('server failed')
+      }
+    } catch (e) {
+      t.fail('server failed')
+    }
+  })
+
+  test.after.always(async () => {
+    await fs.remove(root)
+    await project.stop()
+  })
+})
+
 test.group('build -', (test) => {
   const root = path.join(test_root, 'project-build-test')
   const types = {
@@ -167,38 +199,6 @@ test.group('build -', (test) => {
     })
 
   test.after.always(() => fs.remove(root))
-})
-
-const ci = process.env.CI !== 'true' ? test : test.skip
-
-ci.serial.group('start/stop/status', (test) => {
-  const root = path.join(test_root, 'project-start-test')
-  const project = new Project({ root, log: false })
-
-  test.before(async () => {
-    await fs.remove(root)
-    await fs.ensureDir(path.join(root, 'project-1'))
-    await project.stop()
-  })
-
-  test(async (t) => {
-    try {
-      await project.start({ ports: [ '8000:80' ] })
-
-      if (await project.status()) {
-        t.pass('server started')
-      } else {
-        t.fail('server failed')
-      }
-    } catch (e) {
-      t.fail('server failed')
-    }
-  })
-
-  test.after.always(async () => {
-    await fs.remove(root)
-    await project.stop()
-  })
 })
 
 test.group('watch', (test) => {

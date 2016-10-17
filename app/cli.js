@@ -195,7 +195,8 @@ export default function cli() {
       updateOptions()
       name = await getName(name)
       try {
-        await project.build(name)
+        const render = await project.build(name)
+        await render()
         project.log(`${chalk.green(name)} was successfully compile`)
       } catch (e) {
         project.log(`${chalk.red(name)} failed to compile`)
@@ -235,20 +236,6 @@ export default function cli() {
       await project.use(name)
     })
 
-
-  commander
-    .command('current')
-    .description('This will output the current project being used')
-    .action(() => {
-      updateOptions()
-      if (project.current) {
-        project.log(project.current)
-      } else {
-        project.log(`No current project has been set please run ${chalk.green.bold('project use')} to set the current project`)
-      }
-    })
-
-
   commander
     .command('publish [name]')
     // .option()
@@ -261,6 +248,19 @@ export default function cli() {
     // .option()
     // .description()
     .action(call(project.translate))
+
+
+  commander
+    .command('current')
+    .description('This will output the current project being used')
+    .action(() => {
+      updateOptions()
+      if (project.current) {
+        project.log(project.current)
+      } else {
+        project.log(`No current project has been set please run ${chalk.green.bold('project use')} to set the current project`)
+      }
+    })
 
 
   commander

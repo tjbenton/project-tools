@@ -27,7 +27,8 @@ lint:
 
 
 test:
-	ava --verbose $(args)
+	ava $(args) && \
+	ava $(args) test/cli.test.js
 
 ci:
 	make lint

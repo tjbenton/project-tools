@@ -205,8 +205,24 @@ export default function cli() {
 
   commander
     .command('watch [name]')
-    // .description()
-    .action(call(project.watch))
+    .description('This will watch your files for changes and build/compile them when they change')
+    .action(async (name) => {
+      updateOptions()
+      name = await getName(name)
+
+      const watcher = await project.watch(name)
+      project.log(`${chalk.green('Started:')}  ${chalk.bold(path.join(name, 'app', '**', '*'))}`)
+      watcher.on('change', (file) => {
+        project.log(`${chalk.green('Started:')}  ${file}`)
+      })
+      watcher.on('success', (file) => {
+        project.log(`${chalk.green('Finished:')} ${file}`)
+      })
+      watcher.on('error', (err, file) => {
+        project.log(`${chalk.red(file)} failed to updated`)
+        project.log('error', err)
+      })
+    })
 
 
   commander

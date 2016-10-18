@@ -191,8 +191,57 @@ test.serial.group('build -', (test) => {
   test.after.always(() => fs.remove(root))
 })
 
-test.group('watch', (test) => {
-  test.todo('watch')
+// can't test this cli command but the watch command has been
+// tested in `project.test.js`
+test.skip.serial.group('watch -', (test) => {
+  const root = path.join(test_root, 'cli-watch-test')
+  const base = cli.clone().cwd(root)
+  const name = 'project-1'
+  const file = {
+    project: name,
+    src: path.join(root, 'projects', name, 'app', 'style', 'index.styl'),
+    dist: path.join(root, 'projects', name, 'dist', 'style', 'index.css'),
+    content: [
+      '$background = #00f;',
+      '',
+      '.level-1 {',
+      '  &__level-2 {',
+      '    background: $background unless @background;',
+      '  }',
+      '}',
+      '',
+    ].join('\n'),
+    expected: '.level-1__level-2 {\n  background: #00f;\n}\n\n/*# sourceMappingURL=style/index.css.map */\n',
+  }
+  const exit = '\u0003'
+
+  test.before(async () => {
+    await fs.remove(root)
+    await fs.outputFile(file.src, file.content)
+  })
+
+
+  test.cb('with no arguments', (t) => {
+    base.clone()
+      .run('watch')
+      .on(/Which project do you want to use\?/g).respond(`${name}${enter}`)
+      .exec(`sleep 30s && ${exit}`)
+      // .exist(file.dist)
+      // .match(file.dist, file.expected)
+      .end(t.end)
+  })
+
+  test.skip.cb('changed file', (t) => {
+    base.clone()
+      .run(`watch ${name}`)
+      .exist(file.dist)
+      .match(file.dist, file.expected)
+      .writeFile(file.src, file.content + '.woohoo { background: #000; }')
+      .match(file.dist, /\.woohoo {/g)
+      .end(t.end)
+  })
+
+  test.afterEach.always(() => fs.remove(root))
 })
 
 test.group('list/ls -', (test) => {

@@ -7,6 +7,15 @@ import path from 'path'
 import to from 'to-js'
 import { forEach } from 'async-array-methods'
 import Project from '../dist/project.js'
+import touch from 'touch'
+const modify = async (src, contents) => {
+  if (contents) {
+    await fs.writeFile(src, contents)
+  }
+  return new Promise((resolve) => {
+    touch(src, {}, resolve)
+  })
+}
 let test = ava.serial.group('project:')
 
 
@@ -202,7 +211,59 @@ test.group('build -', (test) => {
 })
 
 test.group('watch', (test) => {
-  test.todo('watch')
+  const root = path.join(test_root, 'project-watch-test')
+  const name = 'style-project'
+  const file = {
+    project: name,
+    src: path.join(root, 'projects', name, 'app', 'style', 'index.styl'),
+    dist: path.join(root, 'projects', name, 'dist', 'style', 'index.css'),
+    content: [
+      '$background = #00f;',
+      '',
+      '.level-1 {',
+      '  &__level-2 {',
+      '    background: $background unless @background;',
+      '  }',
+      '}',
+      '',
+    ].join('\n'),
+    expected: '.level-1__level-2 {\n  background: #00f;\n}\n\n/*# sourceMappingURL=style/index.css.map */\n',
+  }
+  test.before(async () => {
+    await fs.remove(root)
+    await fs.outputFile(file.src, file.content)
+  })
+
+  test(async (t) => {
+    const project = new Project({ root, log: false })
+    t.plan(11)
+    t.falsy(await fs.exists(file.dist))
+    const watcher = await project.watch(name)
+    const files = await globby(path.join('**', '*'), { cwd: root, nodir: true })
+
+    t.is(files.length, 3)
+    t.is(path.basename(files[1]), 'index.css')
+    t.is(path.basename(files[2]), 'index.css.map')
+    t.is(typeof watcher.on, 'function')
+    t.is(typeof watcher.emit, 'function')
+    t.truthy(await fs.exists(file.dist))
+    t.is(to.string(await fs.readFile(file.dist)), file.expected)
+    const rest = () => {
+      return new Promise((resolve) => {
+        watcher.on('success', async (file_path) => {
+          t.is(file_path, 'style-project/app/style/index.styl')
+          const content = to.string(await fs.readFile(file.dist))
+          t.not(content, file.expected)
+          t.truthy(/\.woohoo {/g.test(content))
+          resolve()
+        })
+      })
+    }
+    await modify(file.src, file.content + '.woohoo { background: #000; }')
+    await rest()
+  })
+
+  test.after.always(() => fs.remove(root))
 })
 
 

@@ -7,6 +7,7 @@ import to, { is } from 'to-js'
 import globby from 'globby'
 import chalk from 'chalk'
 import compile from './compile'
+import chokidar from 'chokidar'
 
 ////
 /// @name Project
@@ -273,8 +274,87 @@ export default class Project extends Logger {
     }
   }
 
-  async watch() {
-    console.log('watch')
+
+  ///# @name watch
+  ///# @description
+  ///# This will watch assest for changes and build/compile the files that change
+  ///# @arg {string} name [this.current] - the name of the project to be created
+  ///# @returns {object} watcher
+  ///# For mor information on what you can do with it see [chokidar](https://github.com/paulmillr/chokidar).
+  ///# There is one extra event that you can listen for on top of what [chokidar](https://github.com/paulmillr/chokidar)
+  ///# already offers and that's `success`
+  ///# @markup
+  ///# const project = new Project()
+  ///# project.watch('project-1')
+  ///#  .then((watcher) => {
+  ///#    watcher
+  ///#      .on('success', (file) => {
+  ///#        console.log(`${file} was successfuly updated`);
+  ///#      })
+  ///#      .on('error', (err, file) => {
+  ///#        console.log(`${file} was failed to update`);
+  ///#      })
+  ///#  })
+  ///# @async
+  async watch(name) {
+    name = name || this.current
+    const root = path.join(this.root, 'projects', name, 'app')
+    const watcher = chokidar.watch(path.join(root, '**', '*'), {
+      persistent: true,
+      cwd: path.join(this.root, 'projects'),
+      ignoreInitial: true,
+    })
+
+    const renderer = await this.build(name)
+    const render = async (file = 'fuck') => {
+      try {
+        await renderer(file.split('app')[1])
+        watcher.emit('success', file)
+      } catch (err) {
+        watcher.emit('error', err, file)
+      }
+    }
+
+    // new
+
+    let log_file = path.join(name, 'app', '**', '*')
+    await render()
+      .then(() => {
+        process.nextTick(() => {
+          watcher.emit('success', log_file)
+        })
+      })
+      .catch((err) => {
+        process.nextTick(() => {
+          watcher.emit('error', err, log_file)
+        })
+      })
+
+    return watcher
+      .on('add', render)
+      .on('change', render)
+
+    // end new
+
+    // return new Promise((resolve) => {
+    //   watcher
+    //     .on('add', render)
+    //     .on('change', render)
+    //
+    //   let log_file = path.join(root, '**', '*').split('projects')[1].slice(1)
+    //   render()
+    //     .then(() => {
+    //       resolve(watcher)
+    //       process.nextTick(() => {
+    //         watcher.emit('success', log_file)
+    //       })
+    //     })
+    //     .catch((err) => {
+    //       process.nextTick(() => {
+    //         watcher.emit('error', err, log_file)
+    //       })
+    //     })
+    // })
   }
 
   ///# @name list

@@ -1,9 +1,8 @@
 import { rollup } from 'rollup'
-import { ext } from '../utils'
+import { ext, plugins } from '../utils'
 import to from 'to-js'
 import { beautify } from '../../utils'
 const debug = require('debug')('compile:javascript')
-import uglify from 'rollup-plugin-uglify'
 
 /// @name javascript
 /// @page compile/javascript
@@ -25,7 +24,15 @@ import uglify from 'rollup-plugin-uglify'
 ///   format: 'iife',
 ///   exports: 'none',
 ///   indent: '  ',
-///   globals: {},
+///   globals: {
+///     jquery: 'jQuery',
+///     document: 'document',
+///     $document: '$(document)',
+///     window: 'window',
+///     $window: '$(window)',
+///     browser: 'browser',
+///     $html: '$(document.documentElement)',
+///   },
 ///   sourceMap: true,
 ///   useStrict: true,
 /// }
@@ -43,7 +50,7 @@ import uglify from 'rollup-plugin-uglify'
 /// @async
 export default async function javascript(file, options = {}) {
   debug('start')
-  options = Object.assign({
+  options = to.extend({
     root: process.cwd(),
     minify: false,
     pretty: true,
@@ -57,7 +64,15 @@ export default async function javascript(file, options = {}) {
     format: 'iife',
     exports: 'none',
     indent: '  ',
-    globals: {},
+    globals: {
+      jquery: 'jQuery',
+      document: 'document',
+      $document: '$(document)',
+      window: 'window',
+      $window: '$(window)',
+      browser: 'browser',
+      $html: '$(document.documentElement)',
+    },
     sourceMap: true,
     useStrict: true,
   }, options)
@@ -65,23 +80,12 @@ export default async function javascript(file, options = {}) {
   // normalize the sourcemap variable to work with rollup
   options.sourceMap = options.sourcemaps
 
-  options.plugins = options.plugins.map((plugin) => {
-    if (to.type(plugin) === 'string') {
-      try {
-        return require(plugin)()
-      } catch (e) {
-        console.log(`can't require the plugin ${plugin} to use for rollupjs`)
-        throw new Error(e)
-        return
-      }
-    }
-
-    return plugin
-  })
 
   if (options.minify) {
-    options.plugins.push(uglify())
+    options.plugins.push('rollup-plugin-uglify')
   }
+
+  options.plugins = plugins(options.plugins)
 
   const getOptions = (possibles) => {
     return possibles.reduce((prev, next) => {

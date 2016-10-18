@@ -1,17 +1,19 @@
 /* eslint-disable id-length, no-shadow */
 
 import ava from 'ava-spec'
-import fs from 'fs-extra-promisify'
-import path from 'path'
+import { join as p } from 'path'
 import none from '../../../dist/compile/none'
 
 const test = ava.group('compile/none:')
-const test_root = path.join(__dirname, 'none-test')
+const test_root = p(__dirname, '..', 'fixtures', 'none')
 
-test.before(async () => {
-  await fs.remove(test_root)
+test.group('expanded', (test) =>{
+  test(async (t) => {
+    const result = await none(p(test_root, 'image.jpg'))
+
+    t.truthy(Buffer.isBuffer(result.code), 'code is a buffer')
+    t.falsy(result.map)
+    t.is(result.language, 'jpg')
+    t.pass('')
+  })
 })
-
-test.todo('none')
-
-test.after.always(() => fs.remove(test_root))

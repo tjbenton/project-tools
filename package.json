@@ -4,10 +4,11 @@
   "description": "Tools for for helping with projects",
   "main": "dist/project.js",
   "bin": {
-    "project": "bin/project"
+    "project": "bin/project",
+    "project-tools": "bin/project"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make test"
   },
   "author": "Tyler Benton <tjbenton21@gmail.com> (https://github.com/tjbenton)",
   "license": "ISC",
@@ -26,7 +27,7 @@
     "inquirer-autocomplete-prompt": "^0.3.0",
     "js-beautify": "~1.6.4",
     "less": "^2.7.1",
-    "lint-rules": "git+https://git@stash.marketamerica.com/scm/ui/lint-rules.git#0.0.4",
+    "lint-rules": "github:ma-shop/lint-rules#v0.0.5",
     "lodash": "^4.16.4",
     "node-sass": "^3.10.1",
     "parse-glob": "~3.0.4",
@@ -46,8 +47,8 @@
     "babel-preset-latest": "^6.14.0",
     "babel-preset-stage-0": "^6.5.0",
     "bdd-stdin": "^0.2.0",
-    "docs-core": "0.0.0-alpha-5.5",
-    "docs-theme-default": "0.0.0-alpha-5.5",
+    "docs-core": "0.0.0-alpha-5.6",
+    "docs-theme-default": "0.0.0-alpha-5.6",
     "nixt": "^0.5.0",
     "pug": "^2.0.0-beta6",
     "touch": "~1.0.0"

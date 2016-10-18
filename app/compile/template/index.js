@@ -16,7 +16,7 @@ const debug = require('debug')('compile:template')
 /// @arg {string, array} files - files to use
 /// @arg {object} options
 ///
-/// ```
+/// ```js
 /// {
 ///   root: process.cwd(),
 ///
@@ -40,7 +40,7 @@ const debug = require('debug')('compile:template')
 /// }
 /// ```
 /// @async
-export default async function template(files, options = {}) {
+export default async function template(files, options = {}) { // eslint-disable-line
   debug('start')
   files = to.array(files)
   options = to.extend({
@@ -49,7 +49,7 @@ export default async function template(files, options = {}) {
     pretty: true,
     languages: {
       txt: 'engine-base',
-      html: 'engine-base'
+      html: 'engine-base',
     },
     layout: '',
   }, options)
@@ -87,7 +87,7 @@ export default async function template(files, options = {}) {
     let language_options = {}
     if (to.type(pkg) === 'object') {
       language_options = pkg.options
-      pkg = pkg.ext
+      pkg = pkg.pkg
     }
 
     app.engine(language, consolidate[pkg] || require(pkg), language_options)
@@ -186,4 +186,3 @@ export default async function template(files, options = {}) {
     })
   }
 }
-

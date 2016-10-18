@@ -1,8 +1,7 @@
-import { ext, color } from '../utils'
+import { ext, color, plugins } from '../utils'
 import postcss from 'postcss'
 import path from 'path'
 import to from 'to-js'
-import cssnano from 'cssnano'
 import { beautify } from '../../utils'
 const debug = require('debug')('compile:style')
 
@@ -18,6 +17,11 @@ const debug = require('debug')('compile:style')
 /// {
 ///   root: process.cwd()
 ///   plugins: [] // any postcss plugins to use
+///   root: process.cwd(), // current working directory
+///   minify: false, // will minify the file if `true`
+///   pretty: true, // adds support to reformat the css using `beautify`
+///   sourcemaps: true, // adds support for sourcemaps
+///   plugins: [],
 /// }
 /// ```
 ///
@@ -35,16 +39,25 @@ export default async function style(file, options = {}) {
   debug(`start ${debug_file}`)
   options = Object.assign({
     root: process.cwd(),
-    minify: false,
-    pretty: true,
-    sourcemaps: true,
+    dirs: [],
+    plugins: [],
+    minify: false, // same as options.minify if not specified
+    pretty: true, // same as options.pretty if not specified
+    sourcemaps: true, // same as options.sourcemaps if not specified
+
+    // extra dirs to add to the resolve functionality of the processor that the file's passed to.
+    // by default the files directory and the root directory are included.
+    dirs: [],
+
+    // any post css plugins that you want to this file to run through.
+    // you can pass a string with the name of the package, or you can pass a function
     plugins: [],
   }, options)
 
   const dirs = [
     path.dirname(file),
     path.dirname(path.resolve(options.root))
-  ]
+  ].concat(options.dirs)
 
   const language = ext(file)
   let processor
@@ -60,8 +73,10 @@ export default async function style(file, options = {}) {
   const compiled = await processor(file, dirs)
 
   if (options.minify) {
-    options.plugins.push(cssnano())
+    options.plugins.push('cssnano')
   }
+
+  options.plugins = plugins(options.plugins)
 
   return postcss(options.plugins)
     .process(compiled.code, {

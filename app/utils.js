@@ -144,6 +144,12 @@ export function exec(command, stdio = false, log) {
   })
 }
 
+
+/// @name unquote
+/// @description
+/// This will unquote a string that's wrapped in quotes
+/// @arg {string} str
+/// @returns {string} the quoteless string
 export function unquote(str) {
   var reg = /[\'\"]/
   if (!str) {
@@ -157,6 +163,10 @@ export function unquote(str) {
 }
 
 
+/// @name Logger
+/// @description
+/// This is the main logger for the project app
+/// @arg {object} options [{ log: true, timestamp: true }]
 export class Logger {
   constructor(options = {}) {
     this.options = Object.assign({
@@ -201,6 +211,13 @@ export class Logger {
 }
 
 import beautifiers from 'js-beautify'
+/// @name beautify
+/// @description
+/// This is used to format files
+/// @arg {string} str - the string to format
+/// @arg {string} type - the type to format the string, accepts `'html', 'css', and 'js'`
+/// @arg {object} options - the options to use for the beautifier
+/// @returns {string} the beautfied string
 export function beautify(str, type, options = {}) {
   if (type === 'json') {
     type = 'js'

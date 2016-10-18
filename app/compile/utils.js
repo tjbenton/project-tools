@@ -1,6 +1,6 @@
 ////
 /// @name utils
-/// @page compile
+/// @page compile/utils
 ////
 
 import path from 'path'
@@ -93,4 +93,48 @@ export function color(str) {
     return `${fn(str)}`
   }
   return fn
+}
+
+
+/// @name mapPlugins
+/// @description
+/// This normalizes arrays of plugins so that the user can pass in a string or a function
+/// @arg {array} list - The plugins list to normalize
+/// Each item can be a `string`, `array`, or `function`
+///
+/// if it's a string the pacakge will be required and called
+///
+/// if it's a array the first item in the array must be a string and the second item in the array will be passed into the required package as options
+///
+/// if it's a function then nothing is done to it
+/// @returns {array} of functions
+export function plugins(list) {
+  return to.array(list)
+    .map((plugin) => {
+      let options
+
+      if (to.type(plugin) === 'array') {
+        options = plugin[1] || {}
+        plugin = plugin[0]
+      }
+
+      if (to.type(plugin) === 'string') {
+        try {
+          plugin = require(plugin)
+          if (plugin.default) {
+            plugin = plugin.default
+          }
+          if (options) {
+            return plugin(options)
+          }
+          return plugin()
+        } catch (e) {
+          console.log(`can't require the plugin ${plugin}`)
+          return ''
+        }
+      }
+
+      return plugin
+    })
+    .filter(Boolean)
 }

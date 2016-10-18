@@ -5,18 +5,28 @@ args = $(filter-out $@, $(MAKECMDGOALS))
 .PHONY: install build compile watch lint test ci
 
 install:
-	npm install
+	if type yarn 2>/dev/null; then \
+		yarn install; \
+		echo "because yarn isn't pulling in the correct package"; \
+		time npm install eslint ma-shop/lint-rules tjbenton/ava-spec docs-core; \
+	else \
+		npm install; \
+	fi
+	# type yarn 2>/dev/null && yarn install || npm install
 
 clean:
-	rm -rf dist
+	rm -rf dist logs
 
-reinstall rebuild setup:
+deep-clean:
 	make clean
 	rm -rf node_modules
+
+reinstall setup:
+	make deep-clean
 	make install
 
 build compile:
-	rm -rf dist/*
+	make clean
 	babel app --out-dir dist $(args)
 
 watch:
@@ -24,7 +34,6 @@ watch:
 
 lint:
 	eslint 'app' 'test'
-
 
 test:
 	ava $(args) && \
@@ -34,3 +43,14 @@ ci:
 	make lint
 	make build
 	make test
+
+VERS := "patch"
+TAG := "latest"
+
+publish release:
+	git checkout master
+	git pull --rebase
+	make ci
+	npm version $(VERS) -m "Release %s"
+	npm publish --tag $(TAG)
+	git push --follow-tags

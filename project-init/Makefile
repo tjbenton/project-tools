@@ -4,11 +4,19 @@ args = $(filter-out $@, $(MAKECMDGOALS))
 
 .PHONY: install build compile watch lint test ci
 
+clean:
+	rm -rf dist/*
+
 install:
 	npm install
 
+reinstall setup:
+	make clean
+	rm -rf node_modules
+	make install
+
 build compile:
-	rm -rf dist/*
+	make clean
 	babel app --out-dir dist $(args)
 
 watch:
@@ -16,7 +24,6 @@ watch:
 
 lint:
 	eslint 'app' 'test'
-
 
 test:
 	ava --verbose

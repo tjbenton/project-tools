@@ -41,7 +41,7 @@ export default class Project extends Logger {
     this.options = Object.assign({
       root: process.cwd(),
       config: '.projectrc.js',
-      create: [ 'index.scss', 'index.js', 'index.jade' ],
+      create: [ 'index.scss', 'index.js', 'index.pug' ],
       log: true,
       dockerCheck: true,
       minify: false,
@@ -138,7 +138,7 @@ export default class Project extends Logger {
   ///# ```
   ///# @async
   async start(options = {}) {
-    if (!(await this.dockerCheck())) {
+    if (!await this.dockerCheck()) {
       return
     }
 
@@ -315,8 +315,6 @@ export default class Project extends Logger {
       }
     }
 
-    // new
-
     let log_file = path.join(name, 'app', '**', '*')
     await render()
       .then(() => {
@@ -333,28 +331,6 @@ export default class Project extends Logger {
     return watcher
       .on('add', render)
       .on('change', render)
-
-    // end new
-
-    // return new Promise((resolve) => {
-    //   watcher
-    //     .on('add', render)
-    //     .on('change', render)
-    //
-    //   let log_file = path.join(root, '**', '*').split('projects')[1].slice(1)
-    //   render()
-    //     .then(() => {
-    //       resolve(watcher)
-    //       process.nextTick(() => {
-    //         watcher.emit('success', log_file)
-    //       })
-    //     })
-    //     .catch((err) => {
-    //       process.nextTick(() => {
-    //         watcher.emit('error', err, log_file)
-    //       })
-    //     })
-    // })
   }
 
   ///# @name list
@@ -388,10 +364,15 @@ export default class Project extends Logger {
     return name
   }
 
+
+  ///# @name publish
+  ///# @todo {4} figure out a good way to publish items
   async publish() {
     console.log('publish')
   }
 
+  ///# @name translate
+  ///# @todo {4} figure out a good way to publish items
   async translate() {
     console.log('translate')
   }

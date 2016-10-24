@@ -53,4 +53,4 @@ publish release:
 	make ci
 	npm version $(VERS) -m "Release %s"
 	npm publish --tag $(TAG)
-	git push --follow-tags
+	git push --follow-tags origin master

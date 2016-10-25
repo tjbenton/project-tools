@@ -32,7 +32,8 @@ const debug = require('debug')('compile:template')
 ///   // `{ ext: 'pug', options: { pretty: true } }`
 ///   languages: {
 ///     txt: 'engine-base',
-///     html: 'engine-base'
+///     html: 'engine-base',
+///     hbs: 'handlebars'
 ///   },
 ///
 ///   // The layout file to use for these pages
@@ -50,6 +51,7 @@ export default async function template(files, options = {}) { // eslint-disable-
     languages: {
       txt: 'engine-base',
       html: 'engine-base',
+      hbs: 'handlebars',
     },
     layout: '',
   }, options)
@@ -86,8 +88,9 @@ export default async function template(files, options = {}) { // eslint-disable-
   for (let [ language, pkg ] of to.entries(options.languages)) {
     let language_options = {}
     if (to.type(pkg) === 'object') {
-      language_options = pkg.options
-      pkg = pkg.pkg
+      language_options = pkg
+      pkg = pkg.pkg || language
+      delete language_options.pkg
     }
 
     app.engine(language, consolidate[pkg] || require(pkg), language_options)
@@ -165,11 +168,18 @@ export default async function template(files, options = {}) { // eslint-disable-
   return (file, locals = {}) => {
     debug('render:start')
     return new Promise((resolve, reject) => {
-      app.render(file, locals, (err, { content: code }) => {
+      app.render(file, locals, (err, res) => {
         if (err) {
+          err.filename = file
+          if (typeof err.toJSON === 'function') {
+            delete err.src
+            delete err.toJSON
+          }
           reject(err)
           return
         }
+
+        let code = res.content
 
         if (options.pretty) {
           code = beautify(code, 'html')

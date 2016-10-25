@@ -80,11 +80,13 @@ import { spawn } from 'child_process'
 /// @name exec
 /// @description Helper function to command line commands from node in an async way
 /// @arg {string} command - The command you're wanting to run
-/// @arg {string, array, boolean} stdio ['inherit'] -
-///  - 'inherit' will let the command that you run to have control over what's output
-///  - 'pipe' will take over the `process.stdout`. This can cause issues if the commands you're running have questions or action items.
-/// @arg {boolean} log [false] - Determins if you want output the stdout or not. Only applies if `stdio` is set to 'pipe'
-export function exec(command, stdio = false, log) {
+/// @arg {string, array, boolean} stdio [false] -
+///  - if `'inherit'`, or `true` will let the command that you run to have control over what's output
+///  - if `'pipe'`, or `false` will take over the `process.stdout`. This can cause issues if the
+///    commands you're running have questions or action items.
+/// @arg {boolean} log [false]
+/// Determins if you want output the stdout or not. Only applies if `stdio` is set to 'pipe'
+export function exec(command, stdio = false, log = false) {
   // enviroment to use where the commands that are run
   // will output in full color
   const env = process.env
@@ -243,12 +245,9 @@ export function beautify(str, type, options = {}) {
   if (type === 'js') {
     Object.assign({
       indent_level: 0,
-      preserve_newlines: true,
-      max_preserve_newlines: 10,
       space_after_anon_function: false,
       jslint_happy: false,
       space_after_anon_function: false,
-      brace_style: 'collapse',
       keep_array_indentation: false,
       keep_function_indentation: false,
       space_before_conditional: true,
@@ -267,7 +266,10 @@ export function beautify(str, type, options = {}) {
   } else {
     // html
     Object.assign({
-      unformatted: [ 'code', 'pre', 'em', 'strong', 'span' ],
+      unformatted: [
+        'li', 'a', 'b', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'small', 'strike', 'u',
+        'sub', 'sup', 'strong', 'span', 'small', 's', 'q', 'i'
+      ],
       wrap_attributes_indent_size: 2,
       wrap_line_length: 0,
       wrap_attributes: 'auto',
@@ -287,24 +289,31 @@ export function beautify(str, type, options = {}) {
       .replace(/(\r\n|\n){2,}/g, '\n')
       // fix multiline, Bootstrap-style comments
       .replace(/(\s*)(<!--.+)\s*(===.+)/g, '$1$2$1$3')
-      // make <li><a></li> on one line, but only when li > a
-      .replace(/(<li>)(\s*)(<a .+)(\s*)(<\/li>)/g, '$1 $3 $5')
       // make <a><span></a> on one line, but only when a > span
-      .replace(/(<a.+)(\s*)(<span .+)(\s*)(<\/a>)/g, '$1 $3 $5')
+      .replace(/(<a.+)(?:\s*)(<(?:span|b|s|i|strong|em|small|big) .+)(?:\s*)(<\/a>)/g, '$1 $2 $3')
+      // make `<li><a>.*</a></li> `on one line, but only when `li > a`
+      .replace(/(<li[^>]*>)(?:\s*)([a-z]*)(?:\s*)(<a .+)(?:\s*)(<\/li>)/g, '$1 $2 $3 $4')
       // Adjust spacing for button > span
       .replace(/(<button.+)(<span.+)(\s*)(<\/button>)/g, '$1$3  $2$3$4')
       // Adjust spacing for span > input
-      .replace(/(\s*)(<span.+)(\s*)(<input.+)(\s*)(<\/span>)/g, '$1$2$1  $4$1$6')
+      .replace(/(\s*)(<span.+)(\s*)(<input.+)(\s*)(<\/span>)/g, '$1$2$1 $4$1$6')
       // Add a newline for tags nested inside <h1-6>
-      .replace(/(\s*)(<h[0-6](?:.+)?>)(.*)(<(?:small|span|strong|em)(?:.+)?)(\s*)(<\/h[0-6]>)/g, '$1$2$3$1  $4$1$6')
+      .replace(/(\s*)(<h[0-6](?:.+)?>)(.*)(<(?:small|span|strong|em)(?:.+)?)(\s*)(<\/h[0-6]>)/g, '$1$2$3$1 $4$1$6')
       // Add a space above each comment
       .replace(/(\s*<!--)/g, '\n$1')
       // Fix conditional comments
       .replace(/( *)(<!--\[.+)(\s*)(.+\s*)?(.+\s*)?(<!\[endif\]-->)/g, '$1$2\n  $1$4$1$5$1$6')
       // Bring closing comments up to the same line as closing tag.
       .replace(/\s*(<!--\s*\/.+)/g, '$1')
+      // bring some tags to be inline
+      .replace(/\s*(<(?:b|s|i|em|strong|span)>)|\s*(<\/(?:b|s|i|em|strong|span)>)\s*(<\/(?:a|li|b|s|i|em|strong|span))?/gi, ' $1$2$3')
+      .replace(/([a-z0-9]) +<\//g, '$1</')
+      // remove space between `> a`, or `> <`
+      .replace(/> +(<|[^\s])/g, '>$1')
       // Add a space after some inline elements, since prettifying strips them sometimes
-      .replace(/(<\/(a|small|span|strong|em)>(?:(?!,)))/g, '$1 ')
+      // .replace(/(<\/(a|small|span|strong|em|b|s|i)>(?:(?!,)))/g, '$1 ')
+      // remove trailing whitespace from each line
+      .replace(/[ \t]+$/g, '')
   }
 
   return str

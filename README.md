@@ -167,6 +167,7 @@ options.template = {
     // [extension]: [package to use]
     txt: 'engine-base',
     html: 'engine-base',
+    hbs: 'handlebars'
   },
 
   // the layout file to use for all projects

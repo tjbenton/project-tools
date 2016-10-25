@@ -27,7 +27,7 @@
     "inquirer-autocomplete-prompt": "^0.3.0",
     "js-beautify": "~1.6.4",
     "less": "^2.7.1",
-    "lint-rules": "github:ma-shop/lint-rules#v0.0.5",
+    "lint-rules": "github:ma-shop/lint-rules",
     "lodash": "^4.16.4",
     "node-sass": "^3.10.1",
     "parse-glob": "~3.0.4",

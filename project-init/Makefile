@@ -16,11 +16,10 @@ reinstall setup:
 	make install
 
 build compile:
-	make clean
-	babel app --out-dir dist $(args)
+	echo 'run `project build`'
 
 watch:
-	make build -- --watch
+	echo 'run `project watch`'
 
 lint:
 	eslint 'app' 'test'
@@ -28,7 +27,7 @@ lint:
 test:
 	ava --verbose
 
-ci:
+ci ci-test full-test:
 	make lint
 	make build
 	make test

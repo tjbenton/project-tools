@@ -3,7 +3,7 @@ import commander from 'commander'
 import to from 'to-js'
 import pkg from '../package.json'
 import Project from './project'
-import { question, confirm } from './utils'
+import { question, confirm, exec } from './utils'
 import chalk from 'chalk'
 
 export default function cli() {
@@ -46,6 +46,11 @@ export default function cli() {
         project.log(`using the default project ${chalk.blue.bold(project.current)}`)
         return project.current
       }
+    }
+
+    if (!list.length) {
+      throw new Error('you haven\'t created any projects yet. To do so just run `project create`')
+      return
     }
 
     if (name && !name_exists) {
@@ -92,6 +97,9 @@ export default function cli() {
     if (commander.production) {
       project.options.minify = true
       project.options.sourcemaps = project.options.pretty = false
+      // removes the layout from the templates
+      project.options.template = project.options.template || {}
+      project.options.template.layout = ''
     }
   }
 
@@ -102,22 +110,23 @@ export default function cli() {
     .option('-m, --minify', 'minifies all the files')
     .option('-s, --no-sourcemaps', 'doesn\'t output sourcemaps')
     .option('-x, --no-pretty', 'doesn\'t format the code')
-    .option('-p, --production', 'removes sourcemaps and minifies files')
+    .option('-p, --production', 'removes sourcemaps, minifies files, and removes the layout')
     .version(pkg.version)
 
   const project = new Project()
 
   commander
     .command('init [project-name] [location]')
+    .option('-y, --yes', 'skipps confirmations')
     .description('this is used to start a new repo of projects')
-    .action(async (name, location) => {
+    .action(async (name, location, { yes }) => {
       updateOptions()
       if (!name) {
         name = await question('What\'s the name of your repo?')
       }
 
       if (!location) {
-        location = await question({
+        location = yes ? to.param(name) : await question({
           message: 'Where do you want this repo to be located?',
           default: to.param(name)
         })
@@ -127,13 +136,24 @@ export default function cli() {
         location = path.join(root, location)
       }
 
-      let should_continue = await confirm(`
+      let should_continue = yes || await confirm(`
         About to create project repo in ${location}:
         Is this ok?
       `, 'Yes')
 
       if (should_continue) {
         await project.init(name, location)
+      }
+
+      try {
+        location = path.relative(root, location)
+        process.chdir(location)
+        await exec('git init; git add --force .; git commit -m "Initial commit"', true, true)
+        project.log('')
+        project.log(`just run ${chalk.bold('cd ' + location)}; ${chalk.bold('make install')} to get started`)
+        project.log('')
+      } catch (e) {
+        project.log('error', e)
       }
     })
 
@@ -197,9 +217,9 @@ export default function cli() {
       try {
         const render = await project.build(name)
         await render()
-        project.log(`${chalk.green(name)} was successfully compile`)
+        project.log(`${chalk.green(name)} was successfully compiled`)
       } catch (e) {
-        project.log(`${chalk.red(name)} failed to compile`)
+        project.log(`${chalk.red(name)} failed to compile\n`, e)
       }
     })
 

@@ -7,7 +7,13 @@ import path from 'path'
 import fs from 'fs-extra-promisify'
 const cli = nixt().base('../../../bin/project ')
 const test_root = path.join(__dirname, 'cli-fixtures')
-
+async function stop() {
+  try {
+    await exec('docker rm --force project')
+  } catch (e) {
+    // do nothing
+  }
+}
 const exec = (command) => {
   return new Promise((resolve, reject) => {
     child_process.exec(command, (err, stdout) => {
@@ -22,6 +28,7 @@ const exec = (command) => {
 test.before(async () => {
   await fs.remove(test_root)
   await fs.ensureDir(test_root)
+  await stop()
 })
 
 const enter = '\n'
@@ -31,13 +38,6 @@ const ci = process.env.CI !== 'true' ? test : test.skip
 ci.serial.group('server', (test) => {
   const root = path.join(test_root, 'cli-server-test')
   const base = cli.clone().cwd(root)
-  async function stop() {
-    try {
-      await exec('docker rm --force project')
-    } catch (e) {
-      // do nothing
-    }
-  }
 
   test.before(async () => {
     await fs.remove(root)
@@ -153,6 +153,18 @@ test.serial.group('create -', (test) => {
       .end(t.end)
   })
 
+  test.cb('create multiple projects', (t) => {
+    base.clone()
+      .exec('ls ./**/*')
+      .run('create three four five')
+      .stdout(/three already exists\n/)
+      .on(/What's the name of your project\?/).respond('six' + enter)
+      .exist(path.join(root, 'projects', 'four'))
+      .exist(path.join(root, 'projects', 'five'))
+      .exist(path.join(root, 'projects', 'six'))
+      .end(t.end)
+  })
+
   test.afterEach.always('', async () => {
     await fs.remove(root)
   })
@@ -160,35 +172,85 @@ test.serial.group('create -', (test) => {
 
 test.serial.group('build -', (test) => {
   const root = path.join(test_root, 'cli-build-test')
-  const name = 'project-1'
-  const file = {
-    src: path.join(root, 'projects', name, 'app', 'js', 'index.js'),
-    dist: path.join(root, 'projects', name, 'dist', 'js', 'index.js'),
-    content: [
-      'var foo = \'foo\';',
-      '',
-      'console.log(foo);',
-      ''
-    ].join('\n'),
-    expected: '(function() {\n  \'use strict\';\n\n  var foo = \'foo\';\n\n  console.log(foo);\n\n}());\n\n/*# sourceMappingURL=js/index.js.map */\n'
-  }
+  const files = [ 'one', 'two', 'three' ]
+    .map((name) => {
+      return {
+        src: path.join(root, 'projects', name, 'app', 'js', 'index.js'),
+        dist: path.join(root, 'projects', name, 'dist', 'js', 'index.js'),
+        content: [
+          'var foo = \'foo\';',
+          '',
+          'console.log(foo);',
+          ''
+        ].join('\n'),
+        expected: '(function() {\n  \'use strict\';\n\n  var foo = \'foo\';\n\n  console.log(foo);\n\n}());\n\n/*# sourceMappingURL=js/index.js.map */\n' // eslint-disable-line
+      }
+    })
+
   const base = cli.clone().cwd(root)
 
-  test.before(async () => {
-    await fs.outputFile(file.src, file.content)
+  test.beforeEach(async () => {
+    await Promise.all(files.map((file) => fs.outputFile(file.src, file.content)))
   })
 
   test.cb('with no arguments', (t) => {
     base.clone()
       .run('build')
-      .on(/Which project do you want to use\?/).respond(name + enter)
-      .stdout(/project-1 was successfully compile/)
-      .exist(file.dist)
-      .match(file.dist, file.expected)
+      .on(/Which project do you want to use\?/).respond('one' + enter)
+      .stdout(/one was successfully compiled/)
+      .exist(files[0].dist)
+      .match(files[0].dist, files[0].expected)
       .end(t.end)
   })
 
-  test.after.always(() => fs.remove(root))
+  test.cb('build multiple projects', (t) => {
+    base.clone()
+      .run('build one two three')
+      .stdout(/(?:.*|\n)one was successfully compiled\n.*two was successfully compiled\n.*three was successfully compiled/)
+      .exist(files[0].dist)
+      .exist(files[1].dist)
+      .exist(files[2].dist)
+      .match(files[0].dist, files[0].expected)
+      .match(files[1].dist, files[1].expected)
+      .match(files[2].dist, files[2].expected)
+      .end(t.end)
+  })
+
+  test.cb('build "one" by passing in "on"', (t) => {
+    base.clone()
+      .run('build on; \n')
+      .on(/(?:.*|\n)on\n.*one/).respond(`${enter}`)
+      .stdout(/(?:.*|\n)one was successfully compiled/)
+      .exist(files[0].dist)
+      .match(files[0].dist, files[0].expected)
+      .end(t.end)
+  })
+
+  test.cb('build all by passing in "all"', (t) => {
+    base.clone()
+      .run('build all')
+      .stdout(/one was successfully compiled\n.*three was successfully compiled\n.*two was successfully compiled/)
+      .exist(files[0].dist)
+      .exist(files[1].dist)
+      .exist(files[2].dist)
+      .match(files[0].dist, files[0].expected)
+      .match(files[1].dist, files[1].expected)
+      .match(files[2].dist, files[2].expected)
+      .end(t.end)
+  })
+
+  test.cb('build two and three by passing in "t*"', (t) => {
+    base.clone()
+      .run('build "t*"')
+      .stdout(/three was successfully compiled\n.*two was successfully compiled/)
+      .exist(files[1].dist)
+      .exist(files[2].dist)
+      .match(files[1].dist, files[1].expected)
+      .match(files[2].dist, files[2].expected)
+      .end(t.end)
+  })
+
+  test.afterEach.always(() => fs.remove(root))
 })
 
 // can't test this cli command but the watch command has been
@@ -360,4 +422,7 @@ test.group('translate', (test) => {
   test.todo('translate')
 })
 
-test.after.always(() => fs.remove(test_root))
+test.after.always(async () => {
+  await fs.remove(test_root)
+  await stop()
+})

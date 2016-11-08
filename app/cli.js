@@ -4,7 +4,10 @@ import to from 'to-js'
 import pkg from '../package.json'
 import Project from './project'
 import { question, confirm, exec } from './utils'
+import { series, forEach } from 'async-array-methods'
 import chalk from 'chalk'
+import matcher from 'matcher'
+import isGlob from 'is-glob'
 
 export default function cli() {
   const root = process.cwd()
@@ -24,12 +27,12 @@ export default function cli() {
   const multiple_message = '(multiple or space/comma seperated strings)'
 
   const setName = async (name, count = 0) => {
-    if (count++ >= 10) {
+    if (count++ >= 20) {
       project.log(`\n\ntry running ${chalk.green.bold('project list')} to see a list of the available projects\n`)
       return true
     }
 
-    name = name ? name : await question('What\'s the name of your project?')
+    name = !!name ? name : await question('What\'s the name of your project?')
     let list = await project.list(name)
     if (list.length) {
       project.log(`${chalk.blue.bold(name)} already exists`)
@@ -40,12 +43,14 @@ export default function cli() {
 
   const getName = async (name, current = true, type = 'list') => {
     const list = await project[type]()
-    const name_exists = list.includes(name)
-    if (current && project.current) {
-      if (!name || name && !name_exists) {
-        project.log(`using the default project ${chalk.blue.bold(project.current)}`)
-        return project.current
-      }
+
+    if (
+      current &&
+      !name &&
+      project.current
+    ) {
+      project.log(`using the default project ${chalk.blue.bold(project.current)}`)
+      return project.current
     }
 
     if (!list.length) {
@@ -53,21 +58,16 @@ export default function cli() {
       return
     }
 
-    if (name && !name_exists) {
-      project.log(`${chalk.red.bold(name)} doesn't match a project that exists`)
-      name = ''
-    }
-
-    if (!name) {
+    if (!list.includes(name) || !name) {
       name = await question({
         type: 'autocomplete',
         message: 'Which project do you want to use?',
-        source(listSoFar, input) {
+        source(list_so_far, input) {
           if (!input) {
             return Promise.resolve(list)
           }
 
-          let result = list.map((item) => {
+          const result = list.map((item) => {
             const index = item.toLowerCase().indexOf(input.toLowerCase())
             if (index < 0) {
               return false
@@ -81,11 +81,12 @@ export default function cli() {
           .filter(Boolean)
 
           return Promise.resolve(result)
-        }
+        },
+        initial: name
       })
     }
 
-    return name
+    return chalk.stripColor(name)
   }
 
   function updateOptions() {
@@ -159,14 +160,19 @@ export default function cli() {
 
 
   commander
-    .command('create [name]')
+    .command('create [names...]')
     .description('creates a new project for you and sets it up the way you want')
-    .action(async (name) => {
+    .action(async (names) => {
       updateOptions()
-      name = await setName(name)
+      if (!names.length) {
+        names.push('')
+      }
 
-      await project.create(name)
-      project.log(`${chalk.green(name)} was successfully created`)
+      names = await series(names, async (name) => setName(name))
+      await forEach(names, async (name) => {
+        await project.create(name)
+        project.log(`${chalk.green(name)} was successfully created`)
+      })
     })
 
 
@@ -208,19 +214,41 @@ export default function cli() {
     })
 
   commander
-    .command('build [name]')
+    .command('build [names...]')
     .alias('compile')
     .description('This will build/compile the assets for the given project')
-    .action(async (name) => {
+    .action(async (names) => {
       updateOptions()
-      name = await getName(name)
-      try {
-        const render = await project.build(name)
-        await render()
-        project.log(`${chalk.green(name)} was successfully compiled`)
-      } catch (e) {
-        project.log(`${chalk.red(name)} failed to compile\n`, e)
+      const list = await project.list()
+
+      // build all the projects
+      if (names[0] === 'all' || names[0] === '*') {
+        names = list
       }
+
+      if (!names.length) {
+        names.push('')
+      }
+
+      names = await series(names, async (name) => {
+        if (isGlob(name)) {
+          return Promise.resolve(matcher(list, [ name ]))
+        }
+        return getName(name)
+      })
+
+      names = to.unique(to.flatten(names))
+
+      await forEach(names, async (name) => {
+        name = await getName(name)
+        try {
+          const render = await project.build(name)
+          await render()
+          project.log(`${chalk.green(name)} was successfully compiled`)
+        } catch (e) {
+          project.log(`${chalk.red(name)} failed to compile\n`, e)
+        }
+      })
     })
 
   commander

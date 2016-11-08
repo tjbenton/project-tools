@@ -6,6 +6,14 @@
 
 import inquirer from 'inquirer'
 import autocomplete from 'inquirer-autocomplete-prompt'
+const originalRun = autocomplete.prototype._run // eslint-disable-line no-underscore-dangle
+autocomplete.prototype._run = function Run(cb) { // eslint-disable-line no-underscore-dangle
+  originalRun.call(this, cb)
+  if (!!this.opt.initial) {
+    // emit a keypress event to pass in the initial option
+    this.rl.input.emit('keypress', this.opt.initial) // trigger the search
+  }
+}
 inquirer.registerPrompt('autocomplete', autocomplete)
 import to from 'to-js'
 

@@ -92,7 +92,7 @@ export default async function compile(root, options = {}) {
   processors.template = await processors.template(root_files, options.template)
 
   debug('end  setup')
-  ///# compile.render
+  ///# @name render
   ///# @description This function is used to render any glob that's passed to it
   ///# @arg {string} glob ['**/*'] - The glob to render
   ///# @returns {array} - files that have been rendered

@@ -123,14 +123,14 @@ export function exec(command, stdio = false, log = false) {
 
     if (child.stdout) {
       child.stdout.on('data', (data) => {
-        data = unquote((data + '').trim()) // .split('\n').filter(Boolean).join('\n')
+        data = unquote((data + '').trim())
         output += data
       })
     }
 
     if (child.stderr) {
       child.stderr.on('data', (err) => {
-        err = unquote((err + '').trim()) // .split('\n').filter(Boolean).join('\n')
+        err = unquote((err + '').trim())
         console.error(chalk.red('[Error]:'), err)
         reject(err)
       })

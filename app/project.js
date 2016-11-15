@@ -20,22 +20,61 @@ import chokidar from 'chokidar'
 /// This class is the main functionality of the project cli
 /// @class
 export default class Project extends Logger {
+  ///# @name constructor
   ///# @constructor
   ///# @arg {object}
   ///# defaults
   ///# ```js
-  ///# // the base folder for the project
-  ///# options.root = projcess.cwd()
+  ///# options = {
+  ///#   // the base folder for the project
+  ///#   root: projcess.cwd(),
   ///#
-  ///# // determins if the config file is used or not
-  ///# options.projectrc = true
+  ///#   // determins if the config file is used or not
+  ///#   projectrc: true,
   ///#
-  ///# // path to the config file
-  ///# options.config = '.projectrc.js'
+  ///#   // path to the config file
+  ///#   config: '.projectrc.js',
   ///#
-  ///# // this will check to make sure that the docker app is running
-  ///# options.dockerCheck = true
+  ///#   // this will check to make sure that the docker app is running
+  ///#   dockerCheck: true,
+  ///#
+  ///#   // the files that will be created in `project/[name]/app`
+  ///#   create: [ 'index.scss', 'index.js', 'index.pug' ],
+  ///#
+  ///#   // if false no logging messages will appear in the console
+  ///#   log: true,
+  ///#
+  ///#   // this determinse if checking for docker is necessary every
+  ///#   // time `project.start()`, `project.status()`, or `project.stop()`
+  ///#   // is run
+  ///#   dockerCheck: true,
+  ///#
+  ///#   // if true files will be minified after they're compiled
+  ///#   minify: false,
+  ///#
+  ///#   // if true files will be run through [js-beautify](https://www.npmjs.com/package/js-beautify)
+  ///#   pretty: true,
+  ///#
+  ///#   // if `true` and `options.minify` is `false` then source maps will be added where possible
+  ///#   sourcemaps: true,
+  ///# }
   ///# ```
+  ///#
+  ///# @note {10} Most functions in `Project` also have `pre` and `post` functionality much like npm scripts.
+  ///# For example if you wanted to do something after every time your files were compiled you can add an option of
+  ///# something like the following
+  ///#
+  ///# ```js
+  ///# options = {
+  ///#   async postbuild(err, name, files) {
+  ///#     // do something awesome here
+  ///#   }
+  ///# }
+  ///# ```
+  ///#
+  ///# All `pre` and `post` will have `this` (aka the current instance of the project) applied to it,
+  ///# and all of them will have different arguments passed to them depending on what the main function is.
+  ///# All `post` functions have the first argument as an `err`, in the same way that all node api functions are.
   constructor(options = {}) {
     super()
     this.options = Object.assign({
@@ -72,7 +111,7 @@ export default class Project extends Logger {
   ///# @description
   ///# Used to create a new repo of projects
   ///# @arg {string} project_name - The name of repo that will be created
-  ///# @arg {string} location - The path to where the project will be created
+  ///# @arg {string} location [project_name] - The path to where the project will be created
   ///# @async
   async init(project_name, location = project_name) {
     await this.runOption('preinit', project_name, location)
@@ -265,8 +304,11 @@ export default class Project extends Logger {
   ///# @returns {function} render
   ///# This function accepts a glob of files that are in the root of the project that was passed
   ///# @markup
+  ///# import Project from 'project-tools'
   ///# const project = new Project()
-  ///# project.build('project-1')
+  ///# const render = await project.build('project-1')
+  ///#
+  ///# render('**/*')
   ///#  .then((render) => {
   ///#    render('**/*')
   ///#  })
@@ -316,17 +358,22 @@ export default class Project extends Logger {
   ///# There is one extra event that you can listen for on top of what [chokidar](https://github.com/paulmillr/chokidar)
   ///# already offers and that's `success`
   ///# @markup
+  ///# import Project from 'project-tools'
   ///# const project = new Project()
-  ///# project.watch('project-1')
-  ///#  .then((watcher) => {
-  ///#    watcher
-  ///#      .on('success', (file) => {
-  ///#        console.log(`${file} was successfuly updated`);
-  ///#      })
-  ///#      .on('error', (err, file) => {
-  ///#        console.log(`${file} was failed to update`);
-  ///#      })
-  ///#  })
+  ///# const watcher = await project.watch('project-1')
+  ///#
+  ///# watcher.on('change', (file) => {
+  ///#   project.log(`${chalk.green('Started:')}  ${file}`)
+  ///# })
+  ///#
+  ///# watcher.on('success', (file) => {
+  ///#   project.log(`${chalk.green('Finished:')} ${file}`)
+  ///# })
+  ///#
+  ///# watcher.on('error', (err, file) => {
+  ///#   project.log(`${chalk.red(file)} failed to updated`)
+  ///#   project.log('error', err)
+  ///# })
   ///# @async
   async watch(name) {
     name = name || this.current

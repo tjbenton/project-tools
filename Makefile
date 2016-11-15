@@ -5,14 +5,14 @@ args = $(filter-out $@, $(MAKECMDGOALS))
 .PHONY: install build compile watch lint test ci
 
 install:
-	if type yarn 2>/dev/null; then \
-		yarn install; \
-		echo "because yarn isn't pulling in the correct package"; \
-		time npm install ma-shop/lint-rules tjbenton/ava-spec docs-core; \
-	else \
-		npm install; \
-	fi
-	# type yarn 2>/dev/null && yarn install || npm install
+	npm install
+	# if type yarn 2>/dev/null; then \
+	# 	yarn install; \
+	# 	echo "because yarn isn't pulling in the correct package"; \
+	# 	time npm install ma-shop/lint-rules tjbenton/ava-spec docs-core; \
+	# else \
+	# 	npm install; \
+	# fi
 
 clean:
 	rm -rf dist logs

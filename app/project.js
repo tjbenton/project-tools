@@ -74,7 +74,8 @@ export default class Project extends Logger {
   ///# @arg {string} project_name - The name of repo that will be created
   ///# @arg {string} location - The path to where the project will be created
   ///# @async
-  async init(project_name, location) {
+  async init(project_name, location = project_name) {
+    await this.runOption('preinit', project_name, location)
     const folder = path.resolve(`${__dirname}/../project-init`)
     const author_info = await Promise.all([
       exec('git config user.name'),
@@ -91,7 +92,9 @@ export default class Project extends Logger {
       return { project_name, author_name, author_email, version }[variable]
     })
 
-    await fs.outputFile(`${location}/package.json`, file, { spaces: 2 })
+    await fs.outputJson(`${location}/package.json`, file, { spaces: 2 })
+
+    await this.runOption('postinit', null)
   }
 
   ///# @name create
@@ -138,12 +141,6 @@ export default class Project extends Logger {
   ///# ```
   ///# @async
   async start(options = {}) {
-    if (!await this.dockerCheck()) {
-      return
-    }
-
-    let list = this.list()
-
     options = Object.assign({
       ports: [ '80:80' ],
       env: [ 'MYSITE=marketamerica.com' ],
@@ -151,14 +148,24 @@ export default class Project extends Logger {
       force: false
     }, options)
 
+    await this.runOption('prestart', options)
+
+    if (!await this.dockerCheck()) {
+      await this.runOption('poststart', {}, 'docker-app-not-open')
+      return
+    }
+
+    let list = this.list()
+
     if (options.force) {
       await this.stop(false)
     } else if (await this.status()) {
-      return this.log('server is already running')
+      this.log('server is already running')
+      await this.runOption('poststart', null, 'already-running')
+      return
     }
 
     list = await list
-
 
     const cmd = [
       'docker run',
@@ -177,8 +184,10 @@ export default class Project extends Logger {
     try {
       await exec(cmd)
       this.log('server was started http://localhost')
+      await this.runOption('poststart', null, 'started')
     } catch (e) {
       this.log('error', e)
+      await this.runOption('poststart', e, 'failed')
     }
   }
 
@@ -221,18 +230,31 @@ export default class Project extends Logger {
   ///# @arg {boolean} log [true]
   ///# @async
   async stop(log = true) {
-    let exists = await this.status()
+    await this.runOption('prestop', log)
+    const exists = await this.status()
     if (!exists) {
       if (log) {
         this.log('server isn\'t running')
       }
+      await this.runOption('poststop', null, 'not-running')
       return
     }
 
-    await exec('docker rm --force project')
-
-    if (log) {
-      this.log('server was stopped')
+    try {
+      await exec('docker rm --force project')
+      if (log) {
+        this.log('server was stopped')
+      }
+      if (await this.status()) {
+        throw new Error('failed to stop server')
+      } else {
+        await this.runOption('poststop', null, 'not-running')
+      }
+    } catch (e) {
+      if (log) {
+        this.log('failed to stop server')
+      }
+      await this.runOption('poststop', e, 'running')
     }
   }
 
@@ -254,8 +276,14 @@ export default class Project extends Logger {
     const render = await compile(root, this.options)
 
     return async (glob = '**/*') => {
-      let files = await render(path.join(root, glob), this.options)
-      return await map(files, async (file) => {
+      if (!path.isAbsolute(glob)) {
+        glob = path.join(root, glob)
+      }
+
+      await this.runOption('prebuild', name, glob)
+
+      const files = await render(glob, this.options)
+      const result = await map(files, async (file) => {
         file.dist = file.path.replace(file.root, file.root.slice(0, -3) + 'dist')
         let sourcemap = Promise.resolve()
         if (file.map) {
@@ -271,6 +299,10 @@ export default class Project extends Logger {
 
         return file
       })
+
+      await this.runOption('postbuild', null, name, result)
+
+      return result
     }
   }
 
@@ -304,11 +336,12 @@ export default class Project extends Logger {
       cwd: path.join(this.root, 'projects'),
       ignoreInitial: true,
     })
+    const ready = (() => new Promise((resolve) => watcher.on('ready', resolve)))()
 
     const renderer = await this.build(name)
-    const render = async (file = 'fuck') => {
+    const render = async (file) => {
       try {
-        await renderer(file.split('app')[1])
+        await renderer(file && file.split(/app(?:\/|\\\\)/)[1])
         watcher.emit('success', file)
       } catch (err) {
         watcher.emit('error', err, file)
@@ -316,17 +349,10 @@ export default class Project extends Logger {
     }
 
     let log_file = path.join(name, 'app', '**', '*')
-    await render()
-      .then(() => {
-        process.nextTick(() => {
-          watcher.emit('success', log_file)
-        })
-      })
-      .catch((err) => {
-        process.nextTick(() => {
-          watcher.emit('error', err, log_file)
-        })
-      })
+    await render(log_file)
+
+    // wait for the watcher to be ready before returning
+    await ready
 
     return watcher
       .on('add', render)
@@ -362,6 +388,41 @@ export default class Project extends Logger {
     await fs.outputFile(this.current_path, name)
     this.current = name
     return name
+  }
+
+
+  ///# @name runOption
+  ///# @description This function is used to run `pre` and `post` options if they exist.
+  ///# @arg {string} name - The the name of the option to run
+  ///# @arg {*} ...args - The arguments to pass to the function
+  ///# @note {5} The function called will always bind to `this`
+  ///# @returns {Promise}
+  ///# @async
+  ///#
+  ///# @markup ###### Example:
+  ///# options = {
+  ///#   async prebuild(name, glob) {
+  ///#     // do something awesome here
+  ///#   }
+  ///# }
+  async runOption(name, ...args) {
+    const fn = this.options[name]
+    let called
+
+    try {
+      if (typeof fn === 'function') {
+        called = this::fn(...args)
+        if (!called.then) {
+          called = Promise.resolve(called)
+        }
+      } else {
+        called = Promise.resolve()
+      }
+
+      return called
+    } catch (e) {
+      this.log('error', `${name} failed to run without errors\n`, e, '\n')
+    }
   }
 
 

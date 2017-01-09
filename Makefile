@@ -1,3 +1,4 @@
+.DEFAULT_GOAL:= build
 PATH := ./node_modules/.bin:$(PATH)
 SHELL := /bin/bash
 args = $(filter-out $@, $(MAKECMDGOALS))

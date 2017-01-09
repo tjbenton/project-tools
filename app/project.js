@@ -131,7 +131,7 @@ export default class Project extends Logger {
       return { project_name, author_name, author_email, version }[variable]
     })
 
-    await fs.outputJson(`${location}/package.json`, file, { spaces: 2 })
+    await fs.outputJson(`${location}/package.json`, to.object(file), { spaces: 2 })
 
     await this.runOption('postinit', null)
   }

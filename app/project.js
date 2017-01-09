@@ -396,10 +396,14 @@ export default class Project extends Logger {
     }
 
     let log_file = path.join(name, 'app', '**', '*')
-    await render(log_file)
-
-    // wait for the watcher to be ready before returning
-    await ready
+    try {
+      await render(log_file)
+      // wait for the watcher to be ready before returning
+      await ready
+      process.nextTick(() => watcher.emit('success', log_file))
+    } catch (err) {
+      process.nextTick(() => watcher.emit('error', err, log_file))
+    }
 
     return watcher
       .on('add', render)

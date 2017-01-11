@@ -25,7 +25,7 @@ build compile:
 	babel app --out-dir dist $(args)
 
 watch:
-	make build -- --watch
+	make build -- --watch --source-maps
 
 lint:
 	eslint 'app' 'test'
@@ -36,17 +36,9 @@ test:
 
 ci:
 	make lint
-	make build
+	babel app --out-dir dist --source-maps
 	CI='true' make test
 	CI='false'
 
-VERS := "patch"
-TAG := "latest"
-
 publish release:
-	git checkout master
-	git pull --rebase
-	make ci
-	npm version $(VERS) -m "Release %s"
-	npm publish --tag $(TAG)
-	git push --follow-tags origin master
+	np $(args)

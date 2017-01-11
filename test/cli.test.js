@@ -94,33 +94,35 @@ ci.serial.group('server', (test) => {
   })
 })
 
-test.serial.group('init -', (test) => {
-  const base = nixt().cwd(test_root).base('../../bin/project ')
-  const name = 'project-init-test'
-  const project_path = path.join(test_root, name)
+ci.serial.group('init -', (test) => {
+  const root = path.join(test_root, 'cli-init-test')
+  const base = cli.clone().cwd(root)
 
-  test.beforeEach(() => fs.remove(project_path))
+  test.before(async () => {
+    await fs.remove(root)
+    await fs.ensureDir(root)
+  })
 
   test.cb('no initial arguments', (t) => {
     base.clone()
       .run('init')
-      .on(/What's the name of your repo\?/).respond(name + enter)
+      .on(/What's the name of your repo\?/).respond('one' + enter)
       .on(/Where do you want this repo to be located\?/).respond(enter)
       .on(/\About to create project repo in/).respond(enter)
-      .exist(project_path)
+      .exist(path.join(root, 'one'))
       .end(t.end)
   })
 
   test.cb('name was passed', (t) => {
     base.clone()
-      .run(`init ${name}`)
+      .run('init two')
       .on(/Where do you want this repo to be located\?/).respond(enter)
       .on(/\About to create project repo in/).respond(enter)
-      .exist(project_path)
+      .exist(path.join(root, 'two'))
       .end(t.end)
   })
 
-  test.afterEach.always(async () => fs.remove(project_path))
+  test.after.always(() => fs.remove(root))
 })
 
 test.serial.group('create -', (test) => {

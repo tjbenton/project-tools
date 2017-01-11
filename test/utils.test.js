@@ -10,20 +10,24 @@ import {
   unquote,
   beautify
 } from '../dist/utils.js'
+import { stdout } from 'test-console'
 import stdin from 'bdd-stdin'
 const keys = Object.assign({ enter: '\n', space: ' ' }, stdin.keys)
 
 test.group('question -', (test) => {
   test('no input', async (t) => {
+    const inspect = stdout.inspect()
     try {
       await question()
       t.fail('should fail')
     } catch (e) {
       t.pass('should fail')
     }
+    inspect.restore()
   })
 
   test('input', async (t) => {
+    const inspect = stdout.inspect()
     try {
       stdin('4', keys.enter)
       const answer = await question('What is 2 + 2?')
@@ -32,19 +36,23 @@ test.group('question -', (test) => {
     } catch (e) {
       t.fail('should be 4')
     }
+    inspect.restore()
   })
 })
 
 test.group('confirm -', (test) => {
   test('no input', async (t) => {
+    const inspect = stdout.inspect()
     try {
       await confirm()
     } catch (e) {
       t.pass('should fail')
     }
+    inspect.restore()
   })
 
   test('no default', async (t) => {
+    const inspect = stdout.inspect()
     try {
       stdin(keys.enter, 'y', keys.enter)
       await confirm('should I continue?')
@@ -52,9 +60,11 @@ test.group('confirm -', (test) => {
     } catch (e) {
       t.fail('should fail')
     }
+    inspect.restore()
   })
 
   test('default true', async (t) => {
+    const inspect = stdout.inspect()
     try {
       stdin(keys.enter)
       const answer = await confirm('should I continue?', true)
@@ -62,9 +72,11 @@ test.group('confirm -', (test) => {
     } catch (e) {
       t.fail('should be true')
     }
+    inspect.restore()
   })
 
   test('default yes', async (t) => {
+    const inspect = stdout.inspect()
     try {
       stdin(keys.enter)
       const answer = await confirm('should I continue?', 'yes')
@@ -72,9 +84,11 @@ test.group('confirm -', (test) => {
     } catch (e) {
       t.fail('should be true')
     }
+    inspect.restore()
   })
 
   test('default y', async (t) => {
+    const inspect = stdout.inspect()
     try {
       stdin(keys.enter)
       const answer = await confirm('should I continue?', 'y')
@@ -82,6 +96,7 @@ test.group('confirm -', (test) => {
     } catch (e) {
       t.fail('should be true')
     }
+    inspect.restore()
   })
 })
 

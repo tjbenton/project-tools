@@ -145,7 +145,7 @@ export function exec(command, stdio = false, log = false) {
         command = chalk.red.bold(command)
       }
       if (log) {
-        process.stdout.write(to.normalize(`
+        console.log(to.normalize(`
           Finished: ${command}
           ${output}
         `) + '\n')
@@ -211,7 +211,7 @@ export class Logger {
         process.stdout.write(stamp)
       }
 
-      console[type](...args)
+      console.log(...args)
 
       if (type === 'error') {
         throw new Error(args.join('\n'))

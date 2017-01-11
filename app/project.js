@@ -116,13 +116,15 @@ export default class Project extends Logger {
   async init(project_name, location = project_name) {
     await this.runOption('preinit', project_name, location)
     const folder = path.resolve(`${__dirname}/../project-init`)
-    const author_info = await Promise.all([
+    const [ author_name, author_email ] = await Promise.all([
       exec('git config user.name'),
       exec('git config user.email')
     ])
 
-    let [ author_name, author_email ] = await author_info
 
+    if (!path.isAbsolute(location)) {
+      location = path.join(this.options.root, location)
+    }
     await fs.copy(folder, location)
 
     // update the json file with the current authors information

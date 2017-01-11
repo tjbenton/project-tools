@@ -1,4 +1,5 @@
 .DEFAULT_GOAL:= build
+MAKEFLAGS = -j1
 PATH := ./node_modules/.bin:$(PATH)
 SHELL := /bin/bash
 args = $(filter-out $@, $(MAKECMDGOALS))
@@ -7,13 +8,6 @@ args = $(filter-out $@, $(MAKECMDGOALS))
 
 install:
 	npm install
-	# if type yarn 2>/dev/null; then \
-	# 	yarn install; \
-	# 	echo "because yarn isn't pulling in the correct package"; \
-	# 	time npm install ma-shop/lint-rules tjbenton/ava-spec docs-core; \
-	# else \
-	# 	npm install; \
-	# fi
 
 clean:
 	rm -rf dist logs
@@ -38,12 +32,13 @@ lint:
 
 test:
 	ava $(args) && \
-	ava $(args) test/cli.test.js
+	ava $(args) 'test/cli.test.js'
 
 ci:
 	make lint
 	make build
-	make test
+	CI='true' make test
+	CI='false'
 
 VERS := "patch"
 TAG := "latest"

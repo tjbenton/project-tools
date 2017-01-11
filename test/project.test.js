@@ -8,6 +8,9 @@ import to from 'to-js'
 import { forEach } from 'async-array-methods'
 import Project from '../dist/project.js'
 import touch from 'touch'
+import { stdout } from 'test-console'
+import { stripColor } from 'chalk'
+
 const modify = async (src, contents) => {
   if (contents) {
     await fs.writeFile(src, contents)
@@ -16,7 +19,7 @@ const modify = async (src, contents) => {
     touch(src, {}, resolve)
   })
 }
-let test = ava.serial.group('project:')
+let test = ava.group('project:')
 
 
 fs.exists = async (str) => {
@@ -30,6 +33,7 @@ fs.exists = async (str) => {
 
 
 const test_root = path.join(__dirname, 'project-fixtures')
+const ci = process.env.CI !== 'true' ? test : test.skip
 
 test.before(async () => {
   await fs.remove(test_root)
@@ -44,15 +48,20 @@ test('functions exist', (t) => {
   })
 })
 
-test('init', async (t) => {
-  const project = new Project({ log: false })
-  const name = 'project-init-test'
-  const dir = path.join(test_root, name)
+ci.group('init', (test) => {
+  const root = path.join(test_root, 'project-init-test')
+  test.before(async () => {
+    await fs.remove(root)
+    await fs.ensureDir(root)
+  })
 
-  await project.init(name, dir)
-  t.truthy(await fs.exists(dir), `${dir} was copied`)
+  test(async (t) => {
+    const project = new Project({ log: false, root })
+    await project.init('one')
+    t.truthy(await fs.exists(path.join(root, 'one')))
+  })
 
-  await fs.remove(dir)
+  test.after.always(() => fs.remove(root))
 })
 
 
@@ -68,12 +77,15 @@ test.group('create -', (test) => {
 
   test('no arguments, no create option', async (t) => {
     const project = new Project({ log: false })
+    const inspect = stdout.inspect()
     try {
       await project.create()
       t.fail('expected failure')
     } catch (e) {
       t.pass('failed correctly')
     }
+    inspect.restore()
+    t.is(stripColor(inspect.output.join('')).trim(), 'error: name must be a string')
   })
 
   test('with name, no create option', async (t) => {
@@ -107,8 +119,6 @@ test.group('create -', (test) => {
   test.after.always(() => fs.remove(root))
   test.todo('create')
 })
-
-const ci = process.env.CI !== 'true' ? test : test.skip
 
 ci.serial.group('start/stop/status', (test) => {
   const root = path.join(test_root, 'project-start-test')

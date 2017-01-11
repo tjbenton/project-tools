@@ -4,6 +4,8 @@
     "stage-0"
   ],
   "plugins": [
-    "transform-runtime"
+    "transform-runtime",
+    "array-includes",
+    "external-helpers"
   ]
 }

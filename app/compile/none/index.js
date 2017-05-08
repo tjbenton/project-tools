@@ -20,7 +20,7 @@ import fs from 'fs-extra-promisify'
 /// @async
 export default async function none(file) {
   return {
-    code: await fs.readFile(file),
+    code: `${await fs.readFile(file)}`,
     map: '',
     language: ext(file)
   }

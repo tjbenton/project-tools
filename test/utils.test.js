@@ -103,7 +103,7 @@ test.group('confirm -', (test) => {
 test.group('exec -', (test) => {
   test('echo', async (t) => {
     try {
-      let result = await exec('echo \'10\'')
+      const result = await exec('echo \'10\'')
       t.is(result, '10', 'result should be 10')
     } catch (e) {
       t.fail('exec should be 10')
@@ -182,15 +182,15 @@ test.group('beautify -', (test) => {
       ],
       expected: [
         '<html>',
-        '<body>',
-        '  <p>Lorem</p>',
-        '</body>',
+        '  <body>',
+        '    <p>Lorem</p>',
+        '  </body>',
         '</html>',
       ]
     },
   }
 
-  for (let [ type, { actual, expected } ] of to.entries(tests)) {
+  for (let [ type, { actual, expected } ] of to.entries(tests)) { // eslint-disable-line
     expected.push('')
     expected = expected.join('\n')
     actual.push('')

@@ -42,3 +42,4 @@ ci:
 
 publish release:
 	np $(args)
+	git push --follow-tags origin master

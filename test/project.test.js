@@ -19,7 +19,7 @@ const modify = async (src, contents) => {
     touch(src, {}, resolve)
   })
 }
-let test = ava.group('project:')
+const test = ava.group('project:')
 
 
 fs.exists = async (str) => {
@@ -211,7 +211,7 @@ test.group('build -', (test) => {
         t.is(to.string(await fs.readFile(type.dist)), type.expected)
 
         if (name !== 'template') {
-          t.truthy(await fs.exists(type.dist + '.map'))
+          t.truthy(await fs.exists(`${type.dist}.map`))
         }
         t.pass(name)
       })
@@ -269,7 +269,7 @@ test.group('watch', (test) => {
         })
       })
     }
-    await modify(file.src, file.content + '.woohoo { background: #000; }')
+    await modify(file.src, `${file.content}.woohoo { background: #000; }`)
     await rest()
   })
 
@@ -308,8 +308,8 @@ test.group('use', (test) => {
     const project = new Project({ root, log: false })
     const name = 'whoohoo'
     await project.use(name)
-    let contents = await fs.readFile(file)
-    t.is(contents + '', name)
+    const contents = await fs.readFile(file)
+    t.is(`${contents}`, name)
   })
 
   test.after.always(() => fs.remove(file))

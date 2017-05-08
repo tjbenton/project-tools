@@ -21,20 +21,20 @@ test(async (t) => {
     code: [
       '<!DOCTYPE html>',
       '<html>',
-      '<head>',
-      '  <meta charset="utf-8">',
-      '  <title></title>',
-      '</head>',
-      '<body>',
-      '  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>',
-      '  <ul>',
-      '    <li>item</li>',
-      '    <li>item</li>',
-      '    <li>item</li>',
-      '    <li>item</li>',
-      '  </ul>',
-      '  <h1>Partial</h1>',
-      '</body>',
+      '  <head>',
+      '    <meta charset="utf-8">',
+      '    <title></title>',
+      '  </head>',
+      '  <body>',
+      '    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>',
+      '    <ul>',
+      '      <li>item</li>',
+      '      <li>item</li>',
+      '      <li>item</li>',
+      '      <li>item</li>',
+      '    </ul>',
+      '    <h1>Partial</h1>',
+      '  </body>',
       '</html>',
       ''
     ].join('\n'),
@@ -42,5 +42,7 @@ test(async (t) => {
     language: 'pug'
   }
 
-  t.deepEqual(actual, expected)
+  t.is(actual.language, expected.language)
+  t.is(actual.map, expected.map)
+  t.is(actual.code, expected.code)
 })

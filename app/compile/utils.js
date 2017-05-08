@@ -39,7 +39,7 @@ export function ext(file) {
 export function type(file) {
   const keys = to.keys(processors)
 
-  for (let key of keys) {
+  for (const key of keys) {
     if (processors[key].includes(ext(file))) {
       return key
     }

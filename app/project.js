@@ -101,7 +101,7 @@ export default class Project extends Logger {
     this.current_path = path.join(this.root, 'PROJECT')
 
     try {
-      this.current = fs.readFileSync(this.current_path) + ''
+      this.current = `${fs.readFileSync(this.current_path)}`
     } catch (e) {
       this.current = null
     }
@@ -237,19 +237,19 @@ export default class Project extends Logger {
   ///# @returns {boolean}
   ///# @async
   async dockerCheck() {
-    let apps = await exec('ps aux | grep -Eo "/Applications/[^/.]*" | grep -Eo "[^/\[^]*$"')
+    const apps = await exec('ps aux | grep -Eo "/Applications/[^/.]*" | grep -Eo "[^/\[^]*$"')
 
     if (apps.split('\n').includes('Docker')) {
       return true
     }
 
-    this.log('error', to.normalize(`
+    this.log('error', `${to.normalize(`
       The docker application needs to be running for this project to work.
 
       With brew you can install it via ${chalk.bold.green('brew install docker')}
       or you can install it from their application page
       https://docs.docker.com/engine/installation/
-    `) + '\n')
+    `)}\n`)
 
     return false
   }
@@ -328,7 +328,7 @@ export default class Project extends Logger {
 
       const files = await render(glob, this.options)
       const result = await map(files, async (file) => {
-        file.dist = file.path.replace(file.root, file.root.slice(0, -3) + 'dist')
+        file.dist = file.path.replace(file.root, `${file.root.slice(0, -3)}dist`)
         let sourcemap = Promise.resolve()
         if (file.map) {
           const map_file = `${file.dist}.map`
@@ -397,7 +397,7 @@ export default class Project extends Logger {
       }
     }
 
-    let log_file = path.join(name, 'app', '**', '*')
+    const log_file = path.join(name, 'app', '**', '*')
     try {
       await render(log_file)
       // wait for the watcher to be ready before returning
@@ -481,8 +481,14 @@ export default class Project extends Logger {
 
   ///# @name publish
   ///# @todo {4} figure out a good way to publish items
-  async publish() {
+  async publish(name) {
     console.log('publish')
+    if (!this.options.publish) {
+      this.log('error', 'You must add a publish function to the `.projectrc.js` file')
+      return
+    }
+
+    this.runOption('publish', name)
   }
 
   ///# @name translate

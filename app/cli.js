@@ -33,7 +33,7 @@ export default function cli() {
     }
 
     name = !!name ? name : await question('What\'s the name of your project?')
-    let list = await project.list(name)
+    const list = await project.list(name)
     if (list.length) {
       project.log(`${chalk.blue.bold(name)} already exists`)
       return await setName(null, count)
@@ -72,7 +72,7 @@ export default function cli() {
             if (index < 0) {
               return false
             }
-            let stop = index + input.length
+            const stop = index + input.length
 
             return item.slice(0, index) +
               chalk.red(item.slice(index, stop)) +
@@ -137,7 +137,7 @@ export default function cli() {
         location = path.join(root, location)
       }
 
-      let should_continue = yes || await confirm(`
+      const should_continue = yes || await confirm(`
         About to create project repo in ${location}:
         Is this ok?
       `, 'Yes')
@@ -151,7 +151,7 @@ export default function cli() {
         process.chdir(location)
         await exec('git init; git add --force .; git commit -m "Initial commit"', true, true)
         project.log('')
-        project.log(`just run ${chalk.bold('cd ' + location)}; ${chalk.bold('make install')} to get started`)
+        project.log(`just run ${chalk.bold(`cd ${location}`)}; ${chalk.bold('make install')} to get started`)
         project.log('')
       } catch (e) {
         project.log('error', e)

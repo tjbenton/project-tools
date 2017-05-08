@@ -85,7 +85,7 @@ export default async function template(files, options = {}) { // eslint-disable-
     })
 
   // set the languages
-  for (let [ language, pkg ] of to.entries(options.languages)) {
+  for (let [ language, pkg ] of to.entries(options.languages)) { // eslint-disable-line
     let language_options = {}
     if (to.type(pkg) === 'object') {
       language_options = pkg
@@ -131,13 +131,13 @@ export default async function template(files, options = {}) { // eslint-disable-
       locals = {}
     }
 
-    let view = this.app.find(file)
+    const view = this.app.find(file)
 
     if (!view) {
       return cb(null, `<!-- can't find import ${file} -->`)
     }
 
-    const ctx = _.extend({}, this.context, locals, view.ctx)
+    const ctx = _.extend({}, this.context || {}, locals || {}, view.ctx || {})
 
     view.compile()
 
@@ -148,6 +148,14 @@ export default async function template(files, options = {}) { // eslint-disable-
 
       cb(null, content)
     })
+  })
+
+  app.asyncHelper('json', function Data(file, cb) {
+    fs.readJson(path.resolve(this.context.locals.root, file))
+      .then((data) => {
+        cb(null, JSON.stringify(data, null, 2))
+      })
+      .catch(cb)
   })
 
   debug('end')
@@ -168,6 +176,7 @@ export default async function template(files, options = {}) { // eslint-disable-
   return (file, locals = {}) => {
     debug('render:start')
     return new Promise((resolve, reject) => {
+      locals.file = file
       app.render(file, locals, (err, res) => {
         if (err) {
           err.filename = file

@@ -65,7 +65,7 @@ export default async function compile(root, options = {}) {
           opts = {}
       }
 
-      let result = await processors[type](file, {
+      const result = await processors[type](file, {
         root,
         minify: options.minify,
         sourcemaps: options.sourcemaps,
@@ -89,6 +89,7 @@ export default async function compile(root, options = {}) {
     })
   }
 
+  // run the initial setup for templates and reset it to call in the `run` function above
   processors.template = await processors.template(root_files, options.template)
 
   debug('end  setup')
@@ -116,7 +117,7 @@ export default async function compile(root, options = {}) {
       options.template.files || {},
       files[0].reduce((prev, next) => {
         let list = next.file.split(path.sep)
-        let file = list.pop().split('.') // remove the file from the list
+        const file = list.pop().split('.') // remove the file from the list
         list.unshift(file.pop()) // unshift the file ext on the start of the list
         list.push(file.join('.')) // push the file back onto the list
         list = list.map(to.snakeCase) // normalize the strings to be snake case
@@ -128,7 +129,7 @@ export default async function compile(root, options = {}) {
     // render the rest of the files
     files[1] = await run(files[1])
 
-    debug('end  render')
+    debug('end render')
     return to.flatten(files)
   }
 }

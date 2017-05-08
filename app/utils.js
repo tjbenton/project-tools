@@ -61,7 +61,7 @@ export function confirm(message, yes_no) {
   message = to.normalize(message)
 
   const default_option = ((val) => {
-    let char = typeof val === 'string' && val[0].toLowerCase()
+    const char = typeof val === 'string' && val[0].toLowerCase()
     if (yes_no === true || char === 'y') {
       return 0
     } else if (yes_no === false || char === 'n') {
@@ -123,14 +123,14 @@ export function exec(command, stdio = false, log = false) {
 
     if (child.stdout) {
       child.stdout.on('data', (data) => {
-        data = unquote((data + '').trim())
+        data = unquote(`${data}`.trim())
         output += data
       })
     }
 
     if (child.stderr) {
       child.stderr.on('data', (err) => {
-        err = unquote((err + '').trim())
+        err = unquote(`${err}`.trim())
         console.error(chalk.red('[Error]:'), err)
         reject(err)
       })
@@ -145,10 +145,10 @@ export function exec(command, stdio = false, log = false) {
         command = chalk.red.bold(command)
       }
       if (log) {
-        console.log(to.normalize(`
+        console.log(`${to.normalize(`
           Finished: ${command}
           ${output}
-        `) + '\n')
+        `)}\n`)
       }
     })
   })
@@ -161,7 +161,7 @@ export function exec(command, stdio = false, log = false) {
 /// @arg {string} str
 /// @returns {string} the quoteless string
 export function unquote(str) {
-  var reg = /[\'\"]/
+  const reg = /[\'\"]/
   if (!str) {
     return ''
   }
@@ -238,7 +238,7 @@ export function beautify(str, type, options = {}) {
     return
   }
 
-  options = Object.assign({
+  let base_options = {
     indent_size: 2,
     indent_char: ' ',
     eol: '\n',
@@ -248,10 +248,10 @@ export function beautify(str, type, options = {}) {
     preserve_newlines: true,
     max_preserve_newlines: 10,
     brace_style: 'collapse',
-  }, options)
+  }
 
   if (type === 'js') {
-    Object.assign({
+    base_options = Object.assign(base_options, {
       indent_level: 0,
       space_after_anon_function: false,
       jslint_happy: false,
@@ -267,17 +267,13 @@ export function beautify(str, type, options = {}) {
       wrap_attributes_indent_size: 4,
     })
   } else if (type === 'css') {
-    Object.assign({
+    base_options = Object.assign(base_options, {
       newline_between_rules: true,
       selector_separator_newline: true,
-    }, options)
+    })
   } else {
     // html
-    Object.assign({
-      unformatted: [
-        'li', 'a', 'b', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'small', 'strike', 'u',
-        'sub', 'sup', 'strong', 'span', 'small', 's', 'q', 'i'
-      ],
+    base_options = Object.assign(base_options, {
       wrap_attributes_indent_size: 2,
       wrap_line_length: 0,
       wrap_attributes: 'auto',
@@ -285,7 +281,7 @@ export function beautify(str, type, options = {}) {
     })
   }
 
-  str = beautifiers[type](str, options)
+  str = beautifiers[type](str, Object.assign(base_options, options))
 
 
   // thanks to https://github.com/jonschlinkert/pretty/blob/master/index.js#L23

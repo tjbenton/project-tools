@@ -1,6 +1,6 @@
 {
   "name": "project-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tools for for helping with projects",
   "main": "dist/project.js",
   "bin": {

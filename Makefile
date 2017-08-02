@@ -31,8 +31,7 @@ lint:
 	eslint 'app' 'test'
 
 test:
-	ava $(args) && \
-	ava $(args) 'test/cli.test.js'
+	ava && ava 'test/cli.test.js'
 
 ci:
 	make lint

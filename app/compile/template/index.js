@@ -63,15 +63,6 @@ export default async function template(files, options = {}) { // eslint-disable-
   app.create('partials', { viewType: 'partial' })
 
   app.option('cwd', options.root)
-  app.option('mergeContext', function MergeContext(locals) {
-    // remove the globals from the `locals.locals` because if you don't
-    // you will get a `Maximum call stack size exceeded` error
-    _.keys(options.globals).forEach((key) => {
-      delete locals.locals[key]
-    })
-
-    return _.extend({}, options.globals, this.data || {}, this.locals || {}, locals)
-  })
 
   ///# @todo {5} Add the ability to add data to the project
   // const data = files.filter((file) => utils.ext(file) === 'json')
@@ -80,9 +71,7 @@ export default async function template(files, options = {}) { // eslint-disable-
   // and any languages that aren't specifcally defined
   to.unique(template_files.map(utils.ext))
     .filter((lang) => options.languages[lang] == null)
-    .forEach((lang) => {
-      app.engine(lang, consolidate[lang])
-    })
+    .forEach((lang) => app.engine(lang, consolidate[lang]))
 
   // set the languages
   for (let [ language, pkg ] of to.entries(options.languages)) { // eslint-disable-line
@@ -150,14 +139,6 @@ export default async function template(files, options = {}) { // eslint-disable-
     })
   })
 
-  app.asyncHelper('json', function Data(file, cb) {
-    fs.readJson(path.resolve(this.context.locals.root, file))
-      .then((data) => {
-        cb(null, JSON.stringify(data, null, 2))
-      })
-      .catch(cb)
-  })
-
   debug('end')
 
   ///# @name render
@@ -177,7 +158,45 @@ export default async function template(files, options = {}) { // eslint-disable-
     debug('render:start')
     return new Promise((resolve, reject) => {
       locals.file = file
-      app.render(file, locals, (err, res) => {
+
+      const view = app.find(file)
+
+      // Note that this wouldn't be necessary if the `templates` lib supported
+      // `pug` and other indented languages better
+      app.on('preRender', (item) => {
+        if ([ 'pug', 'jade' ].includes(utils.ext(item.key))) {
+          const str = item.contents.toString()
+          const script_regex = /<script(?:\s+[^>]*)?>((?:.|\n)*?)<\/script(\s+[^>]*)?>/g
+          str.replace(script_regex, (match, content) => {
+            if (content.split('\n').slice(1).filter((line) => line.trim()).length) {
+              reject(new Error('Inline JS with multiple lines is not supported with `pug`, and `jade` files'))
+              return ''
+            }
+
+            return content
+          })
+
+          item.contents = str
+            // minify each <style> tag into their own single line so that pug/jade doesn't break
+            .replace(/(<style(?:\s+[^>]*)?>)((?:.|\n)*?)(<\/style(\s+[^>]*)?>)/g, (match, open, content, close) => {
+              content = content
+                // remove the last `;` from each property list
+                .replace(/;(?=(\s|\n)*})/g, '')
+                // remove the space between these characters
+                .replace(/\s*([{}:;,]|!important)\s*/g, '$1')
+                .trim()
+              return `${open}${content}${close}\n`
+            })
+            // remove the space before each line that starts with `<` otherwise pug/jade breaks
+            .split(/\n/)
+            .map((line) => /^\s*</.test(line) ? line.trim() : line)
+            .join('\n')
+        }
+      })
+
+      view.compile()
+
+      view.render(locals, (err, res) => {
         if (err) {
           err.filename = file
           if (typeof err.toJSON === 'function') {
@@ -199,7 +218,6 @@ export default async function template(files, options = {}) { // eslint-disable-
           map: '',
           language: utils.ext(file)
         })
-
         debug('render:end')
       })
     })

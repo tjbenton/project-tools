@@ -46,42 +46,17 @@ test('javascript', async (t) => {
 
 
 test('template', async (t) => {
-  const expected = [
-    '<!DOCTYPE html>',
-    '<html>',
-    '  <head>',
-    '    <meta charset="utf-8">',
-    '    <title></title>',
-    '  </head>',
-    '  <body>',
-    '    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>',
-    '    <ul>',
-    '      <li>item</li>',
-    '      <li>item</li>',
-    '      <li>item</li>',
-    '      <li>item</li>',
-    '    </ul>',
-    '    <h1>Partial</h1>',
-    '  </body>',
-    '</html>',
-    ''
-  ].join('\n')
   const root = path.join(fixtures, 'template')
-  const render = await compile(root, {
-    template: {
-      layout: '_layout'
-    }
-  })
-  const result = await render(path.join(root, '**', '*'))
-  t.truthy(Array.isArray(result), 'is an array')
-  t.is(1, result.length)
+  const render = await compile(root, { template: { layout: '_layout' } })
+  const actual = await render(path.join(root, '**', '*'))
+  t.truthy(Array.isArray(actual), 'is an array')
 
-  result.forEach((item) => {
-    t.is(item.code, expected)
-    t.truthy(item.language)
-    t.truthy(item.src)
-    t.truthy(item.root)
-    t.truthy(item.processor)
-    t.falsy(item.map)
+  actual.forEach((item) => {
+    // remove the absolute paths the items
+    item.src = item.src.replace(item.root, '')
+    item.path = item.path.replace(item.root, '')
+    item.root = ''
+
+    t.snapshot(item)
   })
 })

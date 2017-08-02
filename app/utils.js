@@ -318,6 +318,18 @@ export function beautify(str, type, options = {}) {
       // .replace(/(<\/(a|small|span|strong|em|b|s|i)>(?:(?!,)))/g, '$1 ')
       // remove trailing whitespace from each line
       .replace(/[ \t]+$/g, '')
+      // add space before !important in <style>
+      .replace(/\s*(!important)/g, ' $1')
+      // add space for media queries arguments
+      .replace(/\(([A-z-]+):\s*([0-9A-z]+)\)(?=[^<]+{)/g, '($1: $2)')
+  }
+
+  if (type === 'css') {
+    return str
+      // add space before !important
+      .replace(/\s*(!important)/g, ' $1')
+      // add space for media queries arguments
+      .replace(/\(([A-z-]+):\s*([0-9A-z]+)\)(?=[^<]+{)/g, '($1: $2)')
   }
 
   return str

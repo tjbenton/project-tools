@@ -1,5 +1,3 @@
-/* eslint-disable id-length, no-shadow */
-
 import ava from 'ava-spec'
 import path from 'path'
 import globby from 'globby'

@@ -39,8 +39,6 @@ export default async function style(file, options = {}) {
   debug(`start ${debug_file}`)
   options = Object.assign({
     root: process.cwd(),
-    dirs: [],
-    plugins: [],
     minify: false, // same as options.minify if not specified
     pretty: true, // same as options.pretty if not specified
     sourcemaps: true, // same as options.sourcemaps if not specified
@@ -56,7 +54,7 @@ export default async function style(file, options = {}) {
 
   const dirs = [
     path.dirname(file),
-    path.dirname(path.resolve(options.root))
+    path.dirname(path.resolve(options.root)),
   ].concat(options.dirs)
 
   const language = ext(file)
@@ -83,8 +81,8 @@ export default async function style(file, options = {}) {
       map: {
         inline: false,
         prev: options.sourcemaps ? compiled.map : '',
-        annotation: false
-      }
+        annotation: false,
+      },
     })
     .then((result) => {
       result.warnings().forEach((warn) => console.warn(warn.toString()))

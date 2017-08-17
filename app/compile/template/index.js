@@ -96,7 +96,7 @@ export default async function template(files, options = {}) { // eslint-disable-
       const content = to.string(await fs.readFile(page))
       const info = {
         path: page,
-        content
+        content,
       }
 
       if (type === 'pages' && !!options.layout) {
@@ -216,7 +216,7 @@ export default async function template(files, options = {}) { // eslint-disable-
         resolve({
           code,
           map: '',
-          language: utils.ext(file)
+          language: utils.ext(file),
         })
         debug('render:end')
       })

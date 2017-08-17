@@ -1,5 +1,3 @@
-/* eslint-disable id-length, no-shadow */
-
 import ava from 'ava-spec'
 import path from 'path'
 import style from '../../../dist/compile/style'
@@ -27,7 +25,7 @@ test('styl', run('styl'))
 test('minify', async (t) => {
   const expected = '.level-1__level-2{background:#00f}\n'
   const result = await style(path.join(__dirname, '..', 'fixtures', 'style', 'test.scss'), {
-    minify: true
+    minify: true,
   })
 
   t.is(result.code, expected)
@@ -38,7 +36,7 @@ test('minify', async (t) => {
 test('no pretty', async (t) => {
   const expected = '.level-1__level-2 {\n  background: #00f;\n}\n'
   const result = await style(path.join(__dirname, '..', 'fixtures', 'style', 'test.scss'), {
-    pretty: false
+    pretty: false,
   })
 
   t.is(result.code, expected)
@@ -49,7 +47,7 @@ test('no pretty', async (t) => {
 test('no sourcemaps', async (t) => {
   const expected = '.level-1__level-2 {\n  background: #00f;\n}\n'
   const result = await style(path.join(__dirname, '..', 'fixtures', 'style', 'test.scss'), {
-    sourcemaps: false
+    sourcemaps: false,
   })
 
   t.is(result.code, expected)

@@ -35,7 +35,7 @@ export default async function compile(root, options = {}) {
     pretty: true,
     style: {},
     template: {},
-    javascript: {}
+    javascript: {},
   }, options)
 
   const processors = to.keys(utils.processors)
@@ -70,7 +70,7 @@ export default async function compile(root, options = {}) {
         minify: options.minify,
         sourcemaps: options.sourcemaps,
         pretty: options.pretty,
-        ...opts
+        ...opts,
       })
 
       result.type = type
@@ -123,7 +123,7 @@ export default async function compile(root, options = {}) {
         list = list.map(to.snakeCase) // normalize the strings to be snake case
         _.set(prev, list, next)
         return prev
-      }, {})
+      }, {}),
     )
 
     // render the rest of the files

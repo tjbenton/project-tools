@@ -101,7 +101,8 @@ export default class Project extends Logger {
     this.current_path = path.join(this.root, 'PROJECT')
 
     try {
-      this.current = `${fs.readFileSync(this.current_path)}`
+      // this has to be sync because you can't make a constructor function async
+      this.current = `${fs.readFileSync(this.current_path)}` // eslint-disable-line no-sync
     } catch (e) {
       this.current = null
     }
@@ -118,7 +119,7 @@ export default class Project extends Logger {
     const folder = path.resolve(`${__dirname}/../project-init`)
     const [ author_name, author_email ] = await Promise.all([
       exec('git config user.name'),
-      exec('git config user.email')
+      exec('git config user.email'),
     ])
 
 
@@ -186,7 +187,7 @@ export default class Project extends Logger {
       ports: [ '80:80' ],
       env: [ 'MYSITE=marketamerica.com' ],
       image: 'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest',
-      force: false
+      force: false,
     }, options)
 
     await this.runOption('prestart', options)
@@ -215,11 +216,11 @@ export default class Project extends Logger {
       '--name project',
       options.env.map((env) => `--env ${env}`).join(' '),
       `--volume "${path.join(this.root, 'projects')}:/usr/share/nginx/html"`,
-      list.map((project) => {
-        return `--volume "${path.join(this.root, 'projects', project, 'dist')}:/usr/share/nginx/html/${project}"`
-      }).join(' '),
+      list
+        .map((project) => `--volume "${path.join(this.root, 'projects', project, 'dist')}:/usr/share/nginx/html/${project}"`)
+        .join(' '),
       `--volume "${path.join(this.root, 'logs')}:/var/log/nginx"`,
-      options.image
+      options.image,
     ].join(' ')
 
     try {
@@ -237,7 +238,7 @@ export default class Project extends Logger {
   ///# @returns {boolean}
   ///# @async
   async dockerCheck() {
-    const apps = await exec('ps aux | grep -Eo "/Applications/[^/.]*" | grep -Eo "[^/\[^]*$"')
+    const apps = await exec('ps aux | grep -Eo "/Applications/[^/.]*" | grep -Eo "[^/[^]*$"')
 
     if (apps.split('\n').includes('Docker')) {
       return true
@@ -258,11 +259,9 @@ export default class Project extends Logger {
   ///# @description this is used to determin if the server is running or not
   ///# @returns {boolean}
   ///# @async
-  async status() {
+  async status() { // eslint-disable-line
     let list = await exec('docker ps --all')
-    list = list.split('\n').slice(1).map((item) => {
-      return item.split(/\s{2,}/g).pop().trim()
-    })
+    list = list.split('\n').slice(1).map((item) => item.split(/\s{2,}/g).pop().trim())
     return list.includes('project')
   }
 
@@ -458,7 +457,7 @@ export default class Project extends Logger {
   ///#     // do something awesome here
   ///#   }
   ///# }
-  async runOption(name, ...args) {
+  runOption(name, ...args) {
     const fn = this.options[name]
     let called
 
@@ -481,7 +480,7 @@ export default class Project extends Logger {
 
   ///# @name publish
   ///# @todo {4} figure out a good way to publish items
-  async publish(name) {
+  publish(name) {
     console.log('publish')
     if (!this.options.publish) {
       this.log('error', 'You must add a publish function to the `.projectrc.js` file')
@@ -493,7 +492,7 @@ export default class Project extends Logger {
 
   ///# @name translate
   ///# @todo {4} figure out a good way to publish items
-  async translate() {
+  translate() { // eslint-disable-line
     console.log('translate')
   }
 }

@@ -9,7 +9,7 @@ import autocomplete from 'inquirer-autocomplete-prompt'
 const originalRun = autocomplete.prototype._run // eslint-disable-line no-underscore-dangle
 autocomplete.prototype._run = function Run(cb) { // eslint-disable-line no-underscore-dangle
   originalRun.call(this, cb)
-  if (!!this.opt.initial) {
+  if (this.opt.initial) {
     // emit a keypress event to pass in the initial option
     this.rl.input.emit('keypress', this.opt.initial) // trigger the search
   }
@@ -35,7 +35,6 @@ export async function question(options = {}) {
   }
   if (!options.message) {
     throw new Error('you have to pass in a message')
-    return
   }
 
   options.message = to.normalize(options.message)
@@ -55,7 +54,6 @@ export async function question(options = {}) {
 export function confirm(message, yes_no) {
   if (!message) {
     throw new Error('you have to pass in a message')
-    return
   }
 
   message = to.normalize(message)
@@ -76,8 +74,8 @@ export function confirm(message, yes_no) {
     default: default_option,
     choices: [
       { key: 'y', name: 'yes', value: true },
-      { key: 'n', name: 'no', value: false }
-    ]
+      { key: 'n', name: 'no', value: false },
+    ],
   })
 }
 
@@ -97,7 +95,7 @@ import { spawn } from 'child_process'
 export function exec(command, stdio = false, log = false) {
   // enviroment to use where the commands that are run
   // will output in full color
-  const env = process.env
+  const { env } = process
   env.NPM_CONFIG_COLOR = 'always'
 
   // this lets the command that was run to determin
@@ -110,8 +108,7 @@ export function exec(command, stdio = false, log = false) {
   }
 
   log && console.log('Started:', chalk.yellow.bold(command))
-  const setRawMode = process.stdin.setRawMode
-  if (setRawMode && typeof setRawMode === 'function') {
+  if (process.stdin.setRawMode && typeof process.stdin.setRawMode === 'function') {
     process.stdin.setRawMode(true)
   }
   process.stdin.setEncoding('utf8')
@@ -161,14 +158,14 @@ export function exec(command, stdio = false, log = false) {
 /// @arg {string} str
 /// @returns {string} the quoteless string
 export function unquote(str) {
-  const reg = /[\'\"]/
+  const reg = /['"]/
   if (!str) {
     return ''
   }
-  const length = str.length
+  const { length } = str
   return str.slice(
     reg.test(str.charAt(0)) ? 1 : 0,
-    reg.test(str.charAt(length - 1)) ? length - 1 : length
+    reg.test(str.charAt(length - 1)) ? length - 1 : length,
   )
 }
 
@@ -181,7 +178,7 @@ export class Logger {
   constructor(options = {}) {
     this.options = Object.assign({
       log: true,
-      timestamp: true
+      timestamp: true,
     }, options)
   }
 
@@ -191,7 +188,7 @@ export class Logger {
         error: 'red',
         warning: 'yellow',
         info: 'blue',
-        log: 'gray'
+        log: 'gray',
       }
 
       if (!to.keys(types).includes(type)) {
@@ -235,7 +232,6 @@ export function beautify(str, type, options = {}) {
 
   if (![ 'html', 'css', 'js' ].includes(type)) {
     throw new Error(`You passed in ${type} to beautify and you must pass in js, html, css, json`)
-    return
   }
 
   let base_options = {
@@ -255,7 +251,6 @@ export function beautify(str, type, options = {}) {
       indent_level: 0,
       space_after_anon_function: false,
       jslint_happy: false,
-      space_after_anon_function: false,
       keep_array_indentation: false,
       keep_function_indentation: false,
       space_before_conditional: true,

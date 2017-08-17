@@ -1,5 +1,3 @@
-/* eslint-disable id-length, no-shadow */
-
 import ava from 'ava-spec'
 import fs from 'fs-extra-promisify'
 import globby from 'globby'
@@ -9,7 +7,7 @@ import { forEach } from 'async-array-methods'
 import Project from '../dist/project.js'
 import touch from 'touch'
 import { stdout } from 'test-console'
-import { stripColor } from 'chalk'
+import stripColor from 'strip-ansi'
 
 const modify = async (src, contents) => {
   if (contents) {
@@ -70,10 +68,10 @@ test.group('create -', (test) => {
   const files = [
     'styles.scss',
     'index.js',
-    'index.jade'
+    'index.jade',
   ].sort()
 
-  test.before(async () => fs.remove(root))
+  test.before(() => fs.remove(root))
 
   test('no arguments, no create option', async (t) => {
     const project = new Project({ log: false })
@@ -160,7 +158,7 @@ test.group('build -', (test) => {
         'var foo = \'foo\';',
         '',
         'console.log(foo);',
-        ''
+        '',
       ].join('\n'),
       expected: '(function() {\n  \'use strict\';\n\n  var foo = \'foo\';\n\n  console.log(foo);\n\n}());\n\n/*# sourceMappingURL=js/index.js.map */\n', // eslint-disable-line
     },
@@ -189,7 +187,7 @@ test.group('build -', (test) => {
         '',
       ].join('\n'),
       expected: '<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n',
-    }
+    },
   }
 
   test.before(async () => {

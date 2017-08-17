@@ -21,6 +21,6 @@ export default async function css(file) {
   debug('end')
   return {
     code,
-    map: ''
+    map: '',
   }
 }

@@ -1,3 +1,4 @@
 rules:
   id-length: 'off'
   no-shadow: 'off'
+  max-lines: 'off'

@@ -1,5 +1,3 @@
-/* eslint-disable id-length, no-shadow */
-
 import ava from 'ava-spec'
 const test = ava.group('compile:')
 import compile from '../../dist/compile'

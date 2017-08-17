@@ -1,5 +1,3 @@
-/* eslint-disable id-length, no-shadow */
-
 import test from 'ava-spec'
 import path from 'path'
 import less from '../../../../dist/compile/style/processors/less.js'

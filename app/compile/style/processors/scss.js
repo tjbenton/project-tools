@@ -28,7 +28,7 @@ export default function(file, dirs) {
       sourceMapEmbed: false,
       sourceMapContents: true,
       outFile: file,
-      omitSourceMapUrl: true
+      omitSourceMapUrl: true,
     }, (err, { css: code, map }) => {
       if (err) {
         return reject(err)

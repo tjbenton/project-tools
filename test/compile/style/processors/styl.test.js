@@ -1,5 +1,3 @@
-/* eslint-disable id-length, no-shadow */
-
 import test from 'ava-spec'
 import path from 'path'
 import styl from '../../../../dist/compile/style/processors/styl.js'

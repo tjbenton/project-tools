@@ -22,6 +22,6 @@ export default async function none(file) {
   return {
     code: `${await fs.readFile(file)}`,
     map: '',
-    language: ext(file)
+    language: ext(file),
   }
 }

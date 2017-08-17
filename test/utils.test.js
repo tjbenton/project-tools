@@ -1,5 +1,3 @@
-/* eslint-disable id-length, no-shadow */
-
 import ava from 'ava-spec'
 const test = ava.serial.group('utils:')
 import to from 'to-js'
@@ -8,7 +6,7 @@ import {
   confirm,
   exec,
   unquote,
-  beautify
+  beautify,
 } from '../dist/utils.js'
 import { stdout } from 'test-console'
 import stdin from 'bdd-stdin'
@@ -152,13 +150,13 @@ test.group('beautify -', (test) => {
         '  return null',
         '  }',
         '',
-        ''
+        '',
       ],
       expected: [
         'function test() {',
         '  return null',
         '}',
-      ]
+      ],
     },
     css: {
       actual: [
@@ -172,7 +170,7 @@ test.group('beautify -', (test) => {
         '  background: blue;',
         '  color: black;',
         '}',
-      ]
+      ],
     },
     html: {
       actual: [
@@ -186,7 +184,7 @@ test.group('beautify -', (test) => {
         '    <p>Lorem</p>',
         '  </body>',
         '</html>',
-      ]
+      ],
     },
   }
 

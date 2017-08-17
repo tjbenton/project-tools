@@ -18,7 +18,7 @@ const processors = {
   template,
   style: [ 'styl', 'scss', 'sass', 'less', 'css' ],
   javascript: [ 'js', 'es' ],
-  none: []
+  none: [],
 }
 
 export { processors }

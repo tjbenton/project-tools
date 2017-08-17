@@ -1,4 +1,3 @@
-/* eslint-disable id-length, no-shadow */
 import ava from 'ava-spec'
 const test = ava.group('CLI:')
 import child_process from 'child_process'
@@ -17,9 +16,7 @@ async function stop() {
 const exec = (command) => {
   return new Promise((resolve, reject) => {
     child_process.exec(command, (err, stdout) => {
-      if (err) {
-        return reject(err)
-      }
+      if (err) return reject(err)
       resolve(stdout)
     })
   })
@@ -106,9 +103,12 @@ ci.serial.group('init -', (test) => {
   test.cb('no initial arguments', (t) => {
     base.clone()
       .run('init')
-      .on(/What's the name of your repo\?/).respond(`one${enter}`)
-      .on(/Where do you want this repo to be located\?/).respond(enter)
-      .on(/\About to create project repo in/).respond(enter)
+      .on(/What's the name of your repo\?/)
+      .respond(`one${enter}`)
+      .on(/Where do you want this repo to be located\?/)
+      .respond(enter)
+      .on(/About to create project repo in/)
+      .respond(enter)
       .exist(path.join(root, 'one'))
       .end(t.end)
   })
@@ -116,8 +116,10 @@ ci.serial.group('init -', (test) => {
   test.cb('name was passed', (t) => {
     base.clone()
       .run('init two')
-      .on(/Where do you want this repo to be located\?/).respond(enter)
-      .on(/\About to create project repo in/).respond(enter)
+      .on(/Where do you want this repo to be located\?/)
+      .respond(enter)
+      .on(/About to create project repo in/)
+      .respond(enter)
       .exist(path.join(root, 'two'))
       .end(t.end)
   })
@@ -139,7 +141,8 @@ test.serial.group('create -', (test) => {
     const name = 'no-arguments'
     base.clone()
       .run('create')
-      .on(/What's the name of your project\?/).respond(name + enter)
+      .on(/What's the name of your project\?/)
+      .respond(name + enter)
       .exist(path.join(root, 'projects', name))
       .end(t.end)
   })
@@ -150,7 +153,8 @@ test.serial.group('create -', (test) => {
       .exec('ls ./**/*')
       .run('create one')
       .stdout(/one already exists\n/)
-      .on(/What's the name of your project\?/).respond(name + enter)
+      .on(/What's the name of your project\?/)
+      .respond(name + enter)
       .exist(path.join(root, 'projects', name))
       .end(t.end)
   })
@@ -160,7 +164,8 @@ test.serial.group('create -', (test) => {
       .exec('ls ./**/*')
       .run('create three four five')
       .stdout(/three already exists\n/)
-      .on(/What's the name of your project\?/).respond(`six${enter}`)
+      .on(/What's the name of your project\?/)
+      .respond(`six${enter}`)
       .exist(path.join(root, 'projects', 'four'))
       .exist(path.join(root, 'projects', 'five'))
       .exist(path.join(root, 'projects', 'six'))
@@ -183,7 +188,7 @@ test.serial.group('build -', (test) => {
           'var foo = \'foo\';',
           '',
           'console.log(foo);',
-          ''
+          '',
         ].join('\n'),
         expected: '(function() {\n  \'use strict\';\n\n  var foo = \'foo\';\n\n  console.log(foo);\n\n}());\n\n/*# sourceMappingURL=js/index.js.map */\n' // eslint-disable-line
       }
@@ -198,7 +203,8 @@ test.serial.group('build -', (test) => {
   test.cb('with no arguments', (t) => {
     base.clone()
       .run('build')
-      .on(/Which project do you want to use\?/).respond(`one${enter}`)
+      .on(/Which project do you want to use\?/)
+      .respond(`one${enter}`)
       .stdout(/one was successfully compiled/)
       .exist(files[0].dist)
       .match(files[0].dist, files[0].expected)
@@ -221,7 +227,8 @@ test.serial.group('build -', (test) => {
   test.cb('build "one" by passing in "on"', (t) => {
     base.clone()
       .run('build on; \n')
-      .on(/(?:.*|\n)on\n.*one/).respond(`${enter}`)
+      .on(/(?:.*|\n)on\n.*one/)
+      .respond(`${enter}`)
       .stdout(/(?:.*|\n)one was successfully compiled/)
       .exist(files[0].dist)
       .match(files[0].dist, files[0].expected)
@@ -288,7 +295,8 @@ test.skip.serial.group('watch -', (test) => {
   test.cb('with no arguments', (t) => {
     base.clone()
       .run('watch')
-      .on(/Which project do you want to use\?/g).respond(`${name}${enter}`)
+      .on(/Which project do you want to use\?/g)
+      .respond(`${name}${enter}`)
       .exec(`sleep 30s && ${exit}`)
       // .exist(file.dist)
       // .match(file.dist, file.expected)
@@ -354,7 +362,8 @@ test.group('use/save -', (test) => {
       cli.clone()
         .cwd(root)
         .run('use')
-        .on(/Which project do you want to use?/).respond('th\n')
+        .on(/Which project do you want to use?/)
+        .respond('th\n')
         .exist(project_file)
         .match(project_file, 'three')
         .end(t.end)

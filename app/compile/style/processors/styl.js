@@ -29,7 +29,7 @@ export default function(file, dirs) {
         style.set('include css', true)
         style.set('sourcemap', {
           comment: false,
-          inline: false
+          inline: false,
         })
 
         style.render((err, code) => {

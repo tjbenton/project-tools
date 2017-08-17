@@ -6,6 +6,7 @@ import Project from './project'
 import { question, confirm, exec } from './utils'
 import { series, forEach } from 'async-array-methods'
 import chalk from 'chalk'
+import stripColor from 'strip-ansi'
 import matcher from 'matcher'
 import isGlob from 'is-glob'
 
@@ -13,7 +14,7 @@ export default function cli() {
   const root = process.cwd()
 
   function call(fn) {
-    return async (...args) => fn.call(project, ...args)
+    return (...args) => fn.call(project, ...args)
   }
 
   function multiple() {
@@ -32,11 +33,11 @@ export default function cli() {
       return true
     }
 
-    name = !!name ? name : await question('What\'s the name of your project?')
+    name = name ? name : await question('What\'s the name of your project?')
     const list = await project.list(name)
     if (list.length) {
       project.log(`${chalk.blue.bold(name)} already exists`)
-      return await setName(null, count)
+      return setName(null, count)
     }
     return name
   }
@@ -55,7 +56,6 @@ export default function cli() {
 
     if (!list.length) {
       throw new Error('you haven\'t created any projects yet. To do so just run `project create`')
-      return
     }
 
     if (!list.includes(name) || !name) {
@@ -67,26 +67,27 @@ export default function cli() {
             return Promise.resolve(list)
           }
 
-          const result = list.map((item) => {
-            const index = item.toLowerCase().indexOf(input.toLowerCase())
-            if (index < 0) {
-              return false
-            }
-            const stop = index + input.length
+          const result = list
+            .map((item) => {
+              const index = item.toLowerCase().indexOf(input.toLowerCase())
+              if (index < 0) {
+                return false
+              }
+              const stop = index + input.length
 
-            return item.slice(0, index) +
-              chalk.red(item.slice(index, stop)) +
-              item.slice(stop)
-          })
-          .filter(Boolean)
+              return item.slice(0, index) +
+                chalk.red(item.slice(index, stop)) +
+                item.slice(stop)
+            })
+            .filter(Boolean)
 
           return Promise.resolve(result)
         },
-        initial: name
+        initial: name,
       })
     }
 
-    return chalk.stripColor(name)
+    return stripColor(name)
   }
 
   function updateOptions() {
@@ -129,7 +130,7 @@ export default function cli() {
       if (!location) {
         location = yes ? to.param(name) : await question({
           message: 'Where do you want this repo to be located?',
-          default: to.param(name)
+          default: to.param(name),
         })
       }
 
@@ -168,7 +169,7 @@ export default function cli() {
         names.push('')
       }
 
-      names = await series(names, async (name) => setName(name))
+      names = await series(names, (name) => setName(name))
       await forEach(names, async (name) => {
         await project.create(name)
         project.log(`${chalk.green(name)} was successfully created`)
@@ -179,8 +180,17 @@ export default function cli() {
   commander
     .command('start')
     .option('-p, --port <port ...>', `Add a port to use ${multiple_message}`, multiple(), [ '80:80', '443:443' ])
-    .option('-e, --env <env ...>', `Add an docker enviromental variable ${multiple_message}`, multiple(), [ 'MYSITE=marketamerica.com' ])
-    .option('-i, --image [image]', 'Sets the docker image to use', 'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest')
+    .option(
+      '-e, --env <env ...>',
+      `Add an docker enviromental variable ${multiple_message}`,
+      multiple(),
+      [ 'MYSITE=marketamerica.com' ],
+    )
+    .option(
+      '-i, --image [image]',
+      'Sets the docker image to use',
+      'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest',
+    )
     .option('-f, --force', 'force restarts the server if it already exists', false)
     .description('This will start the docker server for the project')
     .action(async ({ port: ports, env, image, force }) => {
@@ -230,7 +240,7 @@ export default function cli() {
         names.push('')
       }
 
-      names = await series(names, async (name) => {
+      names = await series(names, (name) => {
         if (isGlob(name)) {
           return Promise.resolve(matcher(list, [ name ]))
         }
@@ -292,7 +302,7 @@ export default function cli() {
   commander
     .command('use [name]')
     .alias('save')
-    .description('This will store the current project you\'re working with so you don\'t have to pass a name to every other command')
+    .description('Stores the current project you\'re working with so you don\'t have to pass a name to every other command')
     .action(async (name) => {
       updateOptions()
       name = await getName(name, false)

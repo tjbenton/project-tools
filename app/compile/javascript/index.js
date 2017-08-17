@@ -105,7 +105,7 @@ export default async function javascript(file, options = {}) {
     'paths',
     'onwarn',
     'acorn',
-    'context'
+    'context',
   ])
   rollup_options.entry = file
 
@@ -122,7 +122,7 @@ export default async function javascript(file, options = {}) {
     'intro',
     'outro',
     'sourceMap',
-    'useStrict'
+    'useStrict',
   ])
 
   let result = await rollup(rollup_options)

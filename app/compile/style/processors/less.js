@@ -26,7 +26,7 @@ export default function(file, dirs) {
           paths: dirs,
           filename: file,
           compress: false,
-          sourceMap: true
+          sourceMap: true,
         }, (err, { css: code, map }) => {
           if (err) {
             return reject(err)

@@ -1,0 +1,24 @@
+{
+  "eng": {
+    "overwritten": "this was overwritten by the eng locale",
+    "list": [
+      "one",
+      "two",
+      "three"
+    ]
+  },
+  "mex": {
+    "list": [
+      "uno",
+      "dos",
+      "tres"
+    ]
+  },
+  "twn": {
+    "list": [
+      "yuht",
+      "ngee",
+      "sahm"
+    ]
+  }
+}

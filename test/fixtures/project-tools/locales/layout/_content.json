@@ -1,0 +1,13 @@
+{
+  "eng": {
+    "translation": {
+      "title": "yo this is a title",
+      "overwritten": "this should be overwritten",
+      "list": [
+        "one",
+        "two",
+        "three"
+      ]
+    }
+  }
+}

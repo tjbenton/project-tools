@@ -30,7 +30,7 @@ fs.exists = async (str) => {
 }
 
 
-const test_root = path.join(__dirname, 'project-fixtures')
+const test_root = path.join(__dirname, 'fixtures', 'project-fixtures')
 const ci = process.env.CI !== 'true' ? test : test.skip
 
 test.before(async () => {
@@ -217,6 +217,24 @@ test.group('build -', (test) => {
 
   test.after.always(() => fs.remove(root))
 })
+
+
+test.group('build locales -', (test) => {
+  const root = path.join(__dirname, 'fixtures', 'project-tools', 'locales')
+  test('project-1', async (t) => {
+    const project = new Project({
+      root,
+      log: false,
+      fallback_locale: 'eng',
+      layout: 'layout/_layout.html',
+    })
+
+    const render = await project.build('project-1')
+    t.snapshot(await render())
+  })
+})
+
+
 
 test.group('watch', (test) => {
   const root = path.join(test_root, 'project-watch-test')

@@ -29,6 +29,7 @@ export default async function compile(project_root, options = {}) {
   debug('start setup')
 
   options = to.extend({
+    root: process.cwd(),
     ignore: [],
     minify: false,
     sourcemaps: true,

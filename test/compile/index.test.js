@@ -43,18 +43,15 @@ test('javascript', async (t) => {
 })
 
 
-test('template', async (t) => {
-  const root = path.join(fixtures, 'template')
-  const render = await compile(root, { template: { layout: '_layout' } })
-  const actual = await render(path.join(root, '**', '*'))
-  t.truthy(Array.isArray(actual), 'is an array')
+test.group('template', (test) => {
+  const folders = [ 'css', 'data', 'simple' ]
 
-  actual.forEach((item) => {
-    // remove the absolute paths the items
-    item.src = item.src.replace(item.root, '')
-    item.path = item.path.replace(item.root, '')
-    item.root = ''
-
-    t.snapshot(item)
+  folders.forEach((folder) => {
+    const root = path.join(fixtures, 'template', folder)
+    test(folder, async (t) => {
+      const render = await compile(root, { root, layout: '_layout.html' })
+      const actual = await render(path.join(root, '**', '*'))
+      t.snapshot(actual)
+    })
   })
 })

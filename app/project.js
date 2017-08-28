@@ -22,10 +22,9 @@ import chokidar from 'chokidar'
 export default class Project extends Logger {
   ///# @name constructor
   ///# @constructor
-  ///# @arg {object}
-  ///# defaults
+  ///# @arg {object} options
   ///# ```js
-  ///# options = {
+  ///# {
   ///#   // the base folder for the project
   ///#   root: projcess.cwd(),
   ///#
@@ -57,6 +56,28 @@ export default class Project extends Logger {
   ///#
   ///#   // if `true` and `options.minify` is `false` then source maps will be added where possible
   ///#   sourcemaps: true,
+  ///#
+  ///#   // this is used to determin which language should be used if the key for a language isn't specified.
+  ///#   // note that locales don't have to be in a specific format, you can even have `cheesecake` as a locale.
+  ///#   It just has to match what's in your `_content.json` file
+  ///#   fallback_locale: 'eng',
+  ///#
+  ///#   // this indicates the default locale that should be built. This option can be a string,
+  ///#   // comma delimited list, or an array of values. You can also use the `all` keyword to build all the locales
+  ///#   default_build_locales: 'all',
+  ///#
+  ///#   // this is the path to the layout.
+  ///#   // Note that this must be inside at least one folder because the other files
+  ///#   layout: 'layout/_layout.html',
+  ///#
+  ///#   // this function is called to rename the file paths so the app knows where to put the compiled files
+  ///#   rename(item, locale) {
+  ///#     const dist = item.path.replace(/\bapp\b/, 'dist')
+  ///#     if (item.processor === 'template' && locale) {
+  ///#       return dist.replace(`${item.file}`, path.join(locale, item.file))
+  ///#     }
+  ///#     return dist
+  ///#   },
   ///# }
   ///# ```
   ///#
@@ -86,6 +107,15 @@ export default class Project extends Logger {
       minify: false,
       pretty: true,
       sourcemaps: true,
+      fallback_locale: 'eng',
+      default_build_locales: 'all',
+      rename(item, locale) {
+        const dist = item.path.replace(/\bapp\b/, 'dist')
+        if (item.processor === 'template' && locale) {
+          return dist.replace(`${item.file}`, path.join(locale, item.file))
+        }
+        return dist
+      },
     }, options)
 
     this.root = this.options.root = options.root || process.cwd()
@@ -302,6 +332,7 @@ export default class Project extends Logger {
   ///# @description
   ///# This will compile an entire folder of assets and output them into a dist directory
   ///# @arg {string} name [this.current] - the name of the project to be created
+  ///# @arg {array, string} locales [all] - the locales to build
   ///# @returns {function} render
   ///# This function accepts a glob of files that are in the root of the project that was passed
   ///# @markup
@@ -314,7 +345,7 @@ export default class Project extends Logger {
   ///#    render('**/*')
   ///#  })
   ///# @async
-  async build(name) {
+  async build(name, locales = this.options.default_build_locales) {
     const root = path.join(this.root, 'projects', name || this.current, 'app')
     const render = await compile(root, this.options)
 
@@ -325,9 +356,8 @@ export default class Project extends Logger {
 
       await this.runOption('prebuild', name, glob)
 
-      const files = await render(glob, this.options)
+      const files = await render(glob, locales)
       const result = await map(files, async (file) => {
-        file.dist = file.path.replace(file.root, `${file.root.slice(0, -3)}dist`)
         let sourcemap = Promise.resolve()
         if (file.map) {
           const map_file = `${file.dist}.map`

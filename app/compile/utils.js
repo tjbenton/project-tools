@@ -12,6 +12,7 @@ const template = to.keys(consolidate)
 _.pull(template, 'requires', 'requireReact', 'clearCache')
 template.push('html')
 template.push('txt')
+template.push('hbs')
 
 
 const processors = {

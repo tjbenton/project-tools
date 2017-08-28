@@ -8,7 +8,7 @@ const fixtures = path.join(__dirname, '..', 'fixtures', 'template')
 
 test('simple', async (t) => {
   const root = path.join(fixtures, 'simple')
-  const render = await template(await globby(path.join(root, '**', '*')), { layout: '_layout' })
+  const render = await template(await globby(path.join(root, '**', '*')), { root, layout: '_layout.html' })
 
   const actual = await render(path.join(root, 'index.pug'))
 
@@ -21,7 +21,7 @@ test('simple', async (t) => {
 // ensure that <style> that doesn't break the rendering process of pug
 test('css', async (t) => {
   const root = path.join(fixtures, 'css')
-  const render = await template(await globby(path.join(root, '**', '*')), { layout: '_layout' })
+  const render = await template(await globby(path.join(root, '**', '*')), { root, layout: '_layout.html' })
   const actual = await render(path.join(root, 'index.pug'))
 
   t.is(actual.language, 'pug')
@@ -38,7 +38,7 @@ test('css', async (t) => {
 // ```
 test('js-error', async (t) => {
   const root = path.join(fixtures, 'js-error')
-  const render = await template(await globby(path.join(root, '**', '*')), { layout: '_layout' })
+  const render = await template(await globby(path.join(root, '**', '*')), { root, layout: '_layout.html' })
 
   try {
     await render(path.join(root, 'index.pug'))
@@ -54,7 +54,7 @@ test.group('data', (test) => {
   const root = path.join(fixtures, 'data')
 
   test('json', async (t) => {
-    const render = await template(await globby(path.join(root, '**', '*')), { layout: '_layout' })
+    const render = await template(await globby(path.join(root, '**', '*')), { root, layout: '_layout.html' })
 
     const actual = await render(path.join(root, 'json-test.pug'))
 
@@ -65,7 +65,7 @@ test.group('data', (test) => {
   })
 
   test('partial', async (t) => {
-    const render = await template(await globby(path.join(root, '**', '*')), { layout: '_layout' })
+    const render = await template(await globby(path.join(root, '**', '*')), { root, layout: '_layout.html' })
     const actual = await render(path.join(root, 'partial-test.pug'))
 
     t.is(actual.code.match(/<h1>.*<\/h1>/g).length, 2)

@@ -97,7 +97,8 @@ export default async function template(files, options = {}) { // eslint-disable-
   spaces = spaces ? spaces[0].replace(/{.*}/, '').length : 0
 
   app.on('preLayout', (view) => {
-    if (spaces) {
+    // only apply the indent if it's a view
+    if (spaces && view.isView && !view.isPartial) {
       // indent all the lines, then remove the padding from the starting line
       view.contents = pad(view.contents, spaces).replace(/^\s*/, '')
     }
@@ -105,7 +106,9 @@ export default async function template(files, options = {}) { // eslint-disable-
 
   // Note that this wouldn't be necessary if the `templates` lib supported
   // `pug` and other indented languages better
-  app.on('preRender', fixIndentLang)
+  app.on('postCompile', fixIndentLang)
+  app.on('postLayout', fixIndentLang)
+
   includeHelper(app)
 
   debug('end')

@@ -13,10 +13,6 @@ import isGlob from 'is-glob'
 export default function cli() {
   const root = process.cwd()
 
-  function call(fn) {
-    return (...args) => fn.call(project, ...args)
-  }
-
   function multiple() {
     const saved = []
     return (args) => {
@@ -95,6 +91,7 @@ export default function cli() {
     project.options.timestamp = commander.timestamp
     project.options.minify = commander.minify
     project.options.sourcemaps = commander.sourcemaps
+    project.options.fallback_locale = commander.fallbackLocale
 
     if (commander.production) {
       project.options.minify = true
@@ -107,20 +104,22 @@ export default function cli() {
 
   commander
     .usage('[command]')
-    .option('-l, --no-log', 'removes all logging execept for errors')
-    .option('-t, --no-timestamp', 'removes timestamps from the logs')
-    .option('-m, --minify', 'minifies all the files')
-    .option('-s, --no-sourcemaps', 'doesn\'t output sourcemaps')
-    .option('-x, --no-pretty', 'doesn\'t format the code')
     .option('-p, --production', 'removes sourcemaps, minifies files, and removes the layout')
+    .option('-m, --minify', 'minifies all the files')
+    .option('--locale [locales...]', `Determins which languages will be compiled ${multiple_message}`, multiple())
+    .option('--fallback-locale [locale]', 'the locale to fallback to', 'en-US')
+    .option('--no-log', 'removes all logging execept for errors')
+    .option('--no-timestamp', 'removes timestamps from the logs')
+    .option('--no-sourcemaps', 'doesn\'t output sourcemaps')
+    .option('--no-pretty', 'doesn\'t format the code')
     .version(pkg.version)
 
   const project = new Project()
 
   commander
     .command('init [project-name] [location]')
-    .option('-y, --yes', 'skipps confirmations')
     .description('this is used to start a new repo of projects')
+    .option('-y, --yes', 'skips confirmations')
     .action(async (name, location, { yes }) => {
       updateOptions()
       if (!name) {
@@ -179,6 +178,7 @@ export default function cli() {
 
   commander
     .command('start')
+    .description('This will start the docker server for the project')
     .option('-p, --port <port ...>', `Add a port to use ${multiple_message}`, multiple(), [ '80:80', '443:443' ])
     .option(
       '-e, --env <env ...>',
@@ -192,7 +192,6 @@ export default function cli() {
       'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest',
     )
     .option('-f, --force', 'force restarts the server if it already exists', false)
-    .description('This will start the docker server for the project')
     .action(async ({ port: ports, env, image, force }) => {
       updateOptions()
       try {
@@ -252,9 +251,19 @@ export default function cli() {
       await forEach(names, async (name) => {
         name = await getName(name)
         try {
-          const render = await project.build(name)
-          await render()
-          project.log(`${chalk.green(name)} was successfully compiled`)
+          const render = await project.build(name, commander.locale)
+          const files = await render()
+
+          let locales = files.reduce((prev, file) => {
+            if (file.type === 'template' && !prev.includes(file.locale)) {
+              prev.push(file.locale)
+            }
+            return prev
+          }, [])
+
+          locales = locales.length ? ` in ${chalk.blue(locales.join(', '))}` : ''
+
+          project.log(`${chalk.green(name)} was successfully compiled${locales}`)
         } catch (e) {
           project.log(`${chalk.red(name)} failed to compile\n`, e)
         }
@@ -268,7 +277,7 @@ export default function cli() {
       updateOptions()
       name = await getName(name)
 
-      const watcher = await project.watch(name)
+      const watcher = await project.watch(name, commander.locale)
       project.log(`${chalk.green('Started:')}  ${chalk.bold(path.join(name, 'app', '**', '*'))}`)
       watcher.on('change', (file) => {
         project.log(`${chalk.green('Started:')}  ${file}`)
@@ -310,19 +319,6 @@ export default function cli() {
       await project.use(name)
     })
 
-  commander
-    .command('publish [name]')
-    // .option()
-    // .description()
-    .action(call(project.publish))
-
-
-  commander
-    .command('translate [name]')
-    // .option()
-    // .description()
-    .action(call(project.translate))
-
 
   commander
     .command('current')
@@ -336,6 +332,14 @@ export default function cli() {
       }
     })
 
+  commander
+    .command('publish [name]')
+    .description('Coming soon')
+    .action(() => {
+      updateOptions()
+      project.options.log = true
+      project.log(`${chalk.red.bold('project publish [name]')} is not yet supported but it will be coming soon`)
+    })
 
   commander
     .command('help')

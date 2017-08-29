@@ -37,13 +37,14 @@ export default class Project extends Logger {
   ///#   // this will check to make sure that the docker app is running
   ///#   dockerCheck: true,
   ///#
-  ///#   // the files that will be created in `project/[name]/app`
+  ///#   // the files that will be created in `project/[name]/app`.
+  ///#   This can be a string to a folder to copy from, or a function
   ///#   create: [ 'index.scss', 'index.js', 'index.pug' ],
   ///#
   ///#   // if false no logging messages will appear in the console
   ///#   log: true,
   ///#
-  ///#   // this determinse if checking for docker is necessary every
+  ///#   // this determines if checking for docker is necessary every
   ///#   // time `project.start()`, `project.status()`, or `project.stop()`
   ///#   // is run
   ///#   dockerCheck: true,
@@ -57,7 +58,7 @@ export default class Project extends Logger {
   ///#   // if `true` and `options.minify` is `false` then source maps will be added where possible
   ///#   sourcemaps: true,
   ///#
-  ///#   // this is used to determin which language should be used if the key for a language isn't specified.
+  ///#   // this is used to determine which language should be used if the key for a language isn't specified.
   ///#   // note that locales don't have to be in a specific format, you can even have `cheesecake` as a locale.
   ///#   It just has to match what's in your `_content.json` file
   ///#   fallback_locale: 'eng',
@@ -68,7 +69,8 @@ export default class Project extends Logger {
   ///#
   ///#   // this is the path to the layout.
   ///#   // Note that this must be inside at least one folder because the other files
-  ///#   layout: 'layout/_layout.html',
+  ///#   // that may be used in the layout. For example `layout/_layout.html`
+  ///#   layout: '',
   ///#
   ///#   // this function is called to rename the file paths so the app knows where to put the compiled files
   ///#   rename(item, locale) {
@@ -109,6 +111,7 @@ export default class Project extends Logger {
       sourcemaps: true,
       fallback_locale: 'eng',
       default_build_locales: 'all',
+      layout: '',
       rename(item, locale) {
         const dist = item.path.replace(/\bapp\b/, 'dist')
         if (item.processor === 'template' && locale) {

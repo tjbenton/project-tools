@@ -3,7 +3,6 @@ import fs from 'fs-extra-promisify'
 import globby from 'globby'
 import path from 'path'
 import to from 'to-js'
-import { forEach } from 'async-array-methods'
 import Project from '../dist/project.js'
 import touch from 'touch'
 import { stdout } from 'test-console'
@@ -149,7 +148,7 @@ ci.serial.group('start/stop/status', (test) => {
   })
 })
 
-test.only.group('build', (test) => {
+test.group('build', (test) => {
   const types = [ 'javascript', 'style', 'template' ]
 
   types.forEach((type) => {
@@ -167,6 +166,16 @@ test.only.group('build', (test) => {
     })
   })
 
+  test('include css in style tag project-1', async (t) => {
+    const project = new Project({
+      root: path.join(fixtures, 'template-include-css'),
+      log: false,
+    })
+
+    const render = await project.build('project-1')
+    t.snapshot(await render())
+    t.pass()
+  })
 
   test.group('locales -', (test) => {
     const root = path.join(fixtures, 'locales')

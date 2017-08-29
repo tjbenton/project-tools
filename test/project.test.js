@@ -30,12 +30,13 @@ fs.exists = async (str) => {
 }
 
 
-const test_root = path.join(__dirname, 'fixtures', 'project-fixtures')
+const temp_root = path.join(__dirname, 'fixtures', 'temp-project-fixtures') // this folder gets removed after all the tests have run in the file
+const fixtures = path.join(__dirname, 'fixtures', 'build')
 const ci = process.env.CI !== 'true' ? test : test.skip
 
 test.before(async () => {
-  await fs.remove(test_root)
-  await fs.ensureDir(test_root)
+  await fs.remove(temp_root)
+  await fs.ensureDir(temp_root)
 })
 
 test('functions exist', (t) => {
@@ -47,7 +48,7 @@ test('functions exist', (t) => {
 })
 
 ci.group('init', (test) => {
-  const root = path.join(test_root, 'project-init-test')
+  const root = path.join(temp_root, 'project-init-test')
   test.before(async () => {
     await fs.remove(root)
     await fs.ensureDir(root)
@@ -64,7 +65,7 @@ ci.group('init', (test) => {
 
 
 test.group('create -', (test) => {
-  const root = path.join(test_root, 'project-create-test')
+  const root = path.join(temp_root, 'project-create-test')
   const files = [
     'styles.scss',
     'index.js',
@@ -119,7 +120,7 @@ test.group('create -', (test) => {
 })
 
 ci.serial.group('start/stop/status', (test) => {
-  const root = path.join(test_root, 'project-start-test')
+  const root = path.join(temp_root, 'project-start-test')
   const project = new Project({ root, log: false })
 
   test.before(async () => {
@@ -148,96 +149,44 @@ ci.serial.group('start/stop/status', (test) => {
   })
 })
 
-test.group('build -', (test) => {
-  const root = path.join(test_root, 'project-build-test')
-  const types = {
-    javascript: {
-      src: path.join(root, 'projects', 'javascript-project', 'app', 'js', 'index.js'),
-      dist: path.join(root, 'projects', 'javascript-project', 'dist', 'js', 'index.js'),
-      content: [
-        'var foo = \'foo\';',
-        '',
-        'console.log(foo);',
-        '',
-      ].join('\n'),
-      expected: '(function() {\n  \'use strict\';\n\n  var foo = \'foo\';\n\n  console.log(foo);\n\n}());\n\n/*# sourceMappingURL=js/index.js.map */\n', // eslint-disable-line
-    },
-    style: {
-      src: path.join(root, 'projects', 'style-project', 'app', 'style', 'index.styl'),
-      dist: path.join(root, 'projects', 'style-project', 'dist', 'style', 'index.css'),
-      content: [
-        '$background = #00f;',
-        '',
-        '.level-1 {',
-        '  &__level-2 {',
-        '    background: $background unless @background;',
-        '  }',
-        '}',
-        '',
-      ].join('\n'),
-      expected: '.level-1__level-2 {\n  background: #00f;\n}\n\n/*# sourceMappingURL=style/index.css.map */\n',
-    },
-    template: {
-      src: path.join(root, 'projects', 'template-project', 'app', 'index.pug'),
-      dist: path.join(root, 'projects', 'template-project', 'dist', 'index.html'),
-      content: [
-        'ul',
-        '  li one',
-        '  li two',
-        '',
-      ].join('\n'),
-      expected: '<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n',
-    },
-  }
+test.only.group('build', (test) => {
+  const types = [ 'javascript', 'style', 'template' ]
 
-  test.before(async () => {
-    await forEach(to.keys(types), (name) => {
-      const type = types[name]
-      return fs.outputFile(type.src, type.content)
-    })
-  })
-
-  to.keys(types)
-    .forEach((name) => {
-      test(name, async (t) => {
-        const type = types[name]
-        const project = new Project({ root, log: false })
-        const render = await project.build(`${name}-project`)
-        await render()
-
-        t.truthy(await fs.exists(type.dist))
-        t.is(to.string(await fs.readFile(type.dist)), type.expected)
-
-        if (name !== 'template') {
-          t.truthy(await fs.exists(`${type.dist}.map`))
-        }
-        t.pass(name)
+  types.forEach((type) => {
+    test(type, async (t) => {
+      const root = path.join(fixtures, type)
+      const project = new Project({
+        root,
+        log: false,
+        javascript: {
+          onwarn() {},
+        },
       })
+      const render = await project.build('project-1')
+      t.snapshot(await render())
     })
-
-  test.after.always(() => fs.remove(root))
-})
+  })
 
 
-test.group('build locales -', (test) => {
-  const root = path.join(__dirname, 'fixtures', 'project-tools', 'locales')
-  test('project-1', async (t) => {
-    const project = new Project({
-      root,
-      log: false,
-      fallback_locale: 'eng',
-      layout: 'layout/_layout.html',
+  test.group('locales -', (test) => {
+    const root = path.join(fixtures, 'locales')
+    test('project-1', async (t) => {
+      const project = new Project({
+        root,
+        log: false,
+        fallback_locale: 'eng',
+        layout: 'layout/_layout.html',
+      })
+
+      const render = await project.build('project-1')
+      t.snapshot(await render())
     })
-
-    const render = await project.build('project-1')
-    t.snapshot(await render())
   })
 })
-
 
 
 test.group('watch', (test) => {
-  const root = path.join(test_root, 'project-watch-test')
+  const root = path.join(temp_root, 'project-watch-test')
   const name = 'style-project'
   const file = {
     project: name,
@@ -294,7 +243,7 @@ test.group('watch', (test) => {
 
 
 test.group('list', (test) => { // ls
-  const root = path.join(test_root, 'project-list-test')
+  const root = path.join(temp_root, 'project-list-test')
   const folders = [ 'one', 'two', 'three' ]
 
   test.before(async () => {
@@ -315,7 +264,7 @@ test.group('list', (test) => { // ls
 })
 
 test.group('use', (test) => {
-  const root = path.join(test_root, 'project-use-test')
+  const root = path.join(temp_root, 'project-use-test')
   const file = path.join(root, 'PROJECT')
 
   test.before(() => fs.remove(root))
@@ -340,4 +289,4 @@ test.group('translate', (test) => {
 })
 
 
-test.after.always(() => fs.remove(test_root))
+test.after.always(() => fs.remove(temp_root))

@@ -70,7 +70,7 @@ export default async function template(files, options = {}) { // eslint-disable-
   const template_files = files.filter((file) => utils.type(file) === 'template') // find only the template files
   addTemplateLanguages(app, options, template_files) // adds all the template languages available
 
-  const resources = await resolveContent(content_files) // gets the content to use for the project
+  const resources = await resolveContent(files) // gets the content to use for the project
 
   // reads all the template files and adds them to the app so they can be compiled
   await addTemplateFiles(app, options, template_files, to.keys(resources))
@@ -194,7 +194,7 @@ export default async function template(files, options = {}) { // eslint-disable-
 /// @arg {array} files [[]] - The files to read
 /// @returns {object} - The object of content that has been merged together
 function resolveContent(files = []) {
-  return reduce(files.filter(Boolean), async (prev, file) => {
+  return reduce(files.filter((file) => file.includes('_content.json')), async (prev, file) => {
     const contents = await fs.readJson(file)
     for (const [ locale, content ] of to.entries(contents)) {
       // if the keys don't include translation then add it in there
@@ -204,15 +204,6 @@ function resolveContent(files = []) {
     }
     return to.extend(prev, contents)
   }, {})
-}
-
-
-/// @name findContentFile
-/// @description This is used to find content files
-/// @arg {array} files - The files to look through
-/// @returns {string, null} - if a content file exists then a string is returned
-function findContentFile(files = []) {
-  return files.filter((file) => file.includes('_content.json'))[0] || null
 }
 
 

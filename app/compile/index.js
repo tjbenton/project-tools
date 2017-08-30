@@ -19,6 +19,20 @@ const debug = require('debug')('compile')
 ///   style: {}, // options for postcss
 ///   template: {}, // options for templates
 ///   javascript: {}, // options for rollup
+///   layout: '', // the layout to use
+///   rename(item, locale, project) {
+///     // the item that was passed in is from the layout root
+///     if (!item.path.includes(project)) {
+///       return path.join(this.root, 'projects', project, 'dist', item.file)
+///     }
+///
+///     const dist = item.path.replace(/\bapp\b/, 'dist')
+///
+///     if (item.processor === 'template' && locale) {
+///       return dist.replace(`${item.file}`, path.join(locale, item.file))
+///     }
+///     return dist
+///   },
 /// }
 /// ```
 /// @description
@@ -38,7 +52,12 @@ export default async function compile(project_root, options = {}) {
     template: {},
     javascript: {},
     layout: '',
-    rename(item, locale) {
+    rename(item, locale, project) {
+      // the item that was passed in is from the layout root
+      if (!item.path.includes(project)) {
+        return path.join(this.root, 'projects', project, 'dist', item.file)
+      }
+
       const dist = item.path.replace(/\bapp\b/, 'dist')
       if (item.processor === 'template' && locale) {
         return dist.replace(`${item.file}`, path.join(locale, item.file))

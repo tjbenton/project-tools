@@ -73,8 +73,14 @@ export default class Project extends Logger {
   ///#   layout: '',
   ///#
   ///#   // this function is called to rename the file paths so the app knows where to put the compiled files
-  ///#   rename(item, locale) {
+  ///#   rename(item, locale, project) {
+  ///#     // the item that was passed in is from the layout root
+  ///#     if (!item.path.includes(project)) {
+  ///#       return path.join(this.root, 'projects', project, 'dist', item.file)
+  ///#     }
+  ///#
   ///#     const dist = item.path.replace(/\bapp\b/, 'dist')
+  ///#
   ///#     if (item.processor === 'template' && locale) {
   ///#       return dist.replace(`${item.file}`, path.join(locale, item.file))
   ///#     }
@@ -112,8 +118,14 @@ export default class Project extends Logger {
       fallback_locale: 'eng',
       default_build_locales: 'all',
       layout: '',
-      rename(item, locale) {
+      rename(item, locale, project) {
+        // the item that was passed in is from the layout root
+        if (!item.path.includes(project)) {
+          return path.join(this.root, 'projects', project, 'dist', item.file)
+        }
+
         const dist = item.path.replace(/\bapp\b/, 'dist')
+
         if (item.processor === 'template' && locale) {
           return dist.replace(`${item.file}`, path.join(locale, item.file))
         }

@@ -66,21 +66,42 @@ export default async function compile(project_root, options = {}) {
     },
   }, options)
 
-  // allow for layout to be set on the templates options and the base options
-  options.template.layout = options.template.layout || options.layout
+  const [ , project_name ] = project_root.replace(options.root + path.sep, '').split(path.sep)
+
+  const glob_options = { ignore: [ 'node_modules' ].concat(options.ignore), nodir: true }
+  const root_files = await globby(path.join(project_root, '**', '*'), glob_options)
+
+  options.style.dirs = options.style.dirs || []
   options.template.root = options.root
+
+  // allow for layout to be set on the templates options and the base options
+  let layout = options.template.layout || options.layout || ''
+
+  // convert the layout path to be absolute
+  layout = !layout || path.isAbsolute(layout) ? layout : path.resolve(options.root, layout)
+  options.layout = options.template.layout = layout
+  let layout_files = []
+  if (layout) {
+    // find the base folder for the layouts location so we can add all the layout files to the app
+    let [ layout_folder ] = options.layout.replace(options.root + path.sep, '').split(path.sep)
+    layout_folder = layout_folder ? `${options.root}/${layout_folder}` : ''
+
+    layout_files = await globby(layout_folder ? `${layout_folder}/**/*` : `${options.root}/_content.json`, { nodir: true })
+    if (layout_folder) {
+      options.layout_folder = layout_folder
+      options.style.dirs.push(layout_folder)
+    }
+    // prepend layout files so that the layout content file will be overwritten by the project specific content file
+    root_files.unshift(...layout_files)
+  }
 
   const processors = to.keys(utils.processors)
     .reduce((prev, next) => {
       prev[next] = require(`./${next}/index.js`).default
       return prev
     }, {})
-  const glob_options = { ignore: [ 'node_modules' ].concat(options.ignore), nodir: true }
-
-  const root_files = await globby(path.join(project_root, '**', '*'), glob_options)
 
   function run(files, locales) {
-    /* eslint-disable max-statements */
     return reduce(files, async (prev, file) => {
       const debug_file = utils.color(file)
       debug(`start file ${debug_file}`)

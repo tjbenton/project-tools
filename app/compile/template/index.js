@@ -5,7 +5,6 @@ import to from 'to-js'
 import templates from 'templates'
 import { forEach, map, reduce } from 'async-array-methods'
 import consolidate from 'consolidate'
-import globby from 'globby'
 import _ from 'lodash'
 import path from 'path'
 import i18n from 'i18next'
@@ -67,21 +66,6 @@ export default async function template(files, options = {}) { // eslint-disable-
   app.create('partials', { viewType: 'partial' })
 
   app.option('cwd', options.project_root)
-
-  // holds the content files that're used for this project
-  const content_files = [ findContentFile(files) ]
-
-  if (options.layout) {
-    // convert the layout path to be absolute
-    options.layout = path.isAbsolute(options.layout) ? options.layout : path.resolve(options.root, options.layout)
-    // find the base folder for the layouts location so we can add all the layout files to the app
-    const [ folder ] = options.layout.replace(options.root + path.sep, '').split(path.sep)
-    const layout_files = await globby(folder ? `${options.root}/${folder}/**/*` : '_content.json', { nodir: true })
-    // find the layout content file and put it at the front so it will be overwritten by the project specific content
-    content_files.unshift(findContentFile(layout_files))
-    // add the layout files to the files array so they can be added to the app
-    files.push(...layout_files)
-  }
 
   const template_files = files.filter((file) => utils.type(file) === 'template') // find only the template files
   addTemplateLanguages(app, options, template_files) // adds all the template languages available

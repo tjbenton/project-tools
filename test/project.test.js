@@ -166,6 +166,30 @@ test.group('build', (test) => {
     })
   })
 
+  test.group('include css in style tag', (test) => {
+    test('project-1', async (t) => {
+      const project = new Project({
+        root: path.join(fixtures, 'template-include-css'),
+        log: false,
+      })
+
+      const render = await project.build('project-1')
+      t.snapshot(await render())
+    })
+
+    test('with layout css', async (t) => {
+      const project = new Project({
+        root: path.join(fixtures, 'template-include-css'),
+        layout: 'layout/index.html',
+        sourcemaps: false,
+        log: false,
+      })
+
+      const render = await project.build('with-layout-css')
+      t.snapshot(await render())
+    })
+  })
+
   test('include css in style tag project-1', async (t) => {
     const project = new Project({
       root: path.join(fixtures, 'template-include-css'),

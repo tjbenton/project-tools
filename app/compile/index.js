@@ -126,6 +126,8 @@ export default async function compile(project_root, options = {}) {
         sourcemaps: options.sourcemaps,
         pretty: options.pretty,
         fallback_locale: options.fallback_locale,
+        layout: options.layout,
+        layout_folder: options.layout_folder,
         locales,
         ...opts,
       })
@@ -134,12 +136,12 @@ export default async function compile(project_root, options = {}) {
         item.type = type
         item.path = utils.renameExt(file)
         item.src = file
-        item.root = project_root
-        item.file = item.path.slice(item.root.length + 1)
+        item.root = file.includes(project_root) ? project_root : options.layout_folder
+        item.file = item.path.replace(item.root + path.sep, '')
         item.processor = type
-        item.dist = options.rename(item, item.locale)
+        item.dist = options.rename(item, item.locale, project_name)
 
-        if (typeof item.dist !== 'string') {
+        if (typeof item.dist !== 'string' || !item.dist) {
           throw new Error(`the file must be a string, you return '${item.dist}' from 'options.rename'`)
         }
 
@@ -166,13 +168,20 @@ export default async function compile(project_root, options = {}) {
   ///# @returns {array} - files that have been rendered
   return async (glob = '**/*', locales = 'all') => {
     debug('start render')
-    let files = await globby(glob, glob_options)
+    let files = await globby([ ...layout_files, glob ], glob_options)
 
     files = files
       .filter((file) => !utils.shouldIgnore(file))
       // move all the template files to the second array and any other file to the first array
-      .reduce((prev, next) => {
-        prev[utils.processors.template.includes(utils.ext(next)) ? 1 : 0].push(next)
+      .reduce((prev, file) => {
+        const is_template_file = utils.processors.template.includes(utils.ext(file)) ? 1 : 0
+
+        // if the file is a template file and is a layout file then ignore it
+        if (is_template_file && layout_files.includes(file)) {
+          return prev
+        }
+
+        prev[is_template_file].push(file)
         return prev
       }, [ [], [] ])
 

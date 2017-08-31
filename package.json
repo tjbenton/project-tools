@@ -24,6 +24,7 @@
     "fs-extra-promisify": "^0.0.2",
     "globby": "^6.0.0",
     "i18next": "^8.4.3",
+    "i18next-sprintf-postprocessor": "^0.2.2",
     "inquirer": "^3.2.2",
     "inquirer-autocomplete-prompt": "^0.11.1",
     "is-glob": "^4.0.0",

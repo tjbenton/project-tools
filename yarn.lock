@@ -3576,6 +3576,10 @@ hullabaloo-config-manager@^1.1.0:
     resolve-from "^3.0.0"
     safe-buffer "^5.0.1"
 
+i18next-sprintf-postprocessor@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/i18next-sprintf-postprocessor/-/i18next-sprintf-postprocessor-0.2.2.tgz#2e409f1043579382698b6a2da70cdaa551d67ea4"
+
 i18next@^8.4.3:
   version "8.4.3"
   resolved "https://registry.yarnpkg.com/i18next/-/i18next-8.4.3.tgz#36b6ff516c4f992010eedcce24a36c4609e8c7dc"

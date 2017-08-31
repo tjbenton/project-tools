@@ -8,6 +8,7 @@ import consolidate from 'consolidate'
 import _ from 'lodash'
 import path from 'path'
 import i18n from 'i18next'
+import sprintf from 'i18next-sprintf-postprocessor'
 
 const debug = require('debug')('compile:template')
 
@@ -129,14 +130,17 @@ export default async function template(files, options = {}) { // eslint-disable-
 
       // create a new instance of i18n so that multiple builds can run at the same time
       const i18nInstance = i18n.createInstance()
-      i18nInstance.init({
-        resources,
-        lng: locale || options.fallback_locale,
-        fallbackLng: options.fallback_locale, // if a language doesn't have a key defined then it will fallback to the one set here
-        interpolation: { escapeValue: false }, // doesn't escape html characters so html can be appart of the content
-        returnObjects: true, // returns arrays and objects as arrays and objects
-        initImmediate: false, // since we aren't loading the data, we don't need it to be async
-      })
+      i18nInstance
+        .use(sprintf)
+        .init({
+          overloadTranslationOptionHandler: sprintf.overloadTranslationOptionHandler,
+          resources,
+          lng: locale || options.fallback_locale,
+          fallbackLng: options.fallback_locale, // if a language doesn't have a key defined then it will fallback to the one set here
+          interpolation: { escapeValue: false }, // doesn't escape html characters so html can be appart of the content
+          returnObjects: true, // returns arrays and objects as arrays and objects
+          initImmediate: false, // since we aren't loading the data, we don't need it to be async
+        })
 
       // add the i18n.t function as helpers in the app
       const translate = i18nInstance.t.bind(i18nInstance)

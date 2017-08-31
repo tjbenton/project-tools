@@ -124,7 +124,8 @@ export default async function template(files, options = {}) { // eslint-disable-
     }
 
     function render(locale) {
-      const project_locales = to.clone(locals)
+      const project_locals = to.clone(locals)
+      project_locals.locale = locale
 
       // create a new instance of i18n so that multiple builds can run at the same time
       const i18nInstance = i18n.createInstance()
@@ -141,13 +142,13 @@ export default async function template(files, options = {}) { // eslint-disable-
       const translate = i18nInstance.t.bind(i18nInstance)
 
       // add the i18n.t function to the locals for other languages like pug
-      project_locales.t = project_locales.translate = translate // eslint-disable-line id-length
+      project_locals.t = project_locals.translate = translate // eslint-disable-line id-length
       app.helper('t', translate)
       app.helper('translate', translate)
 
 
       return new Promise((resolve, reject) => {
-        app.render(getLocaleFile(file, locale), project_locales, (err, page) => {
+        app.render(getLocaleFile(file, locale), project_locals, (err, page) => {
           if (err) {
             err.filename = file
             if (typeof err.toJSON === 'function') {

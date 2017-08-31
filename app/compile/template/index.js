@@ -390,9 +390,14 @@ function pad(str, amount, character = ' ') {
 /// @async
 function renderLayout(page) {
   return new Promise((resolve, reject) => {
-    // If the page has a layout applied to it then render the layout with the correct engine.
-    // This is nessisary because the templates lib doesn't compile the layout file
-    if (page.layoutStack && page.layoutStack.length) {
+    // If the page has a layout applied to it and the layouts template language is different than the
+    // pages language then render the layout with the correct engine. This is nessisary because
+    // the templates lib doesn't compile the layout file
+    if (
+      page.layoutStack &&
+      page.layoutStack.length &&
+      utils.ext(page.key) !== utils.ext(page.layoutStack[0].layout.key)
+    ) {
       const file = page.layoutStack[0].layout.key
       page.engine = `.${utils.ext(file)}`
 

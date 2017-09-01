@@ -116,12 +116,9 @@ export default async function template(files, options = {}) { // eslint-disable-
     debug('render:start')
     locals.file = file
 
-    let { locales: build_locales } = locals
+    let { locales: locales_to_build } = locals
     delete locals.locales
-    build_locales = to.array(build_locales, /[\s,]+/)
-
-    if (build_locales.includes('all')) {
-      build_locales = to.keys(resources)
+    locales_to_build = to.array(locales_to_build, /[\s,]+/)
     }
 
     function render(locale) {
@@ -183,8 +180,13 @@ export default async function template(files, options = {}) { // eslint-disable-
       })
     }
 
-    if (build_locales.length) {
-      return map(build_locales, render)
+    if (locales_to_build.includes('all')) {
+      locales_to_build = await resolveContent(files.filter((content_file) => content_file.includes(locals.project_root)))
+      locales_to_build = to.keys(locales_to_build)
+    }
+
+    if (locales_to_build.length) {
+      return map(locales_to_build, render)
     }
 
     return render()

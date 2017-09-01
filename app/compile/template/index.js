@@ -71,10 +71,10 @@ export default async function template(files, options = {}) { // eslint-disable-
   const template_files = files.filter((file) => utils.type(file) === 'template') // find only the template files
   addTemplateLanguages(app, options, template_files) // adds all the template languages available
 
-  const resources = await resolveContent(files) // gets the content to use for the project
+  let initial_resources = await resolveContent(files) // gets the content to use for the project for the initial run
 
   // reads all the template files and adds them to the app so they can be compiled
-  await addTemplateFiles(app, options, template_files, to.keys(resources))
+  await addTemplateFiles(app, options, template_files, to.keys(initial_resources))
 
   // find the correct amount of spaces to indent the contents before a layout's applied
   let spaces = app.find(options.layout, 'layouts')
@@ -112,16 +112,26 @@ export default async function template(files, options = {}) { // eslint-disable-
   ///# }
   ///# ```
   ///# @async
-  return (file, locals = {}) => {
+  return async (file, locals = {}) => {
     debug('render:start')
     locals.file = file
 
     let { locales: locales_to_build } = locals
     delete locals.locales
     locales_to_build = to.array(locales_to_build, /[\s,]+/)
+
+    let resources
+    // if the `initial_resources` is defined then use it then set it to null
+    // so the following times this render function is run it will update the content
+    if (initial_resources) {
+      resources = initial_resources
+      initial_resources = null
+    } else {
+      resources = await resolveContent(files)
     }
 
-    function render(locale) {
+
+    function render(locale = null) {
       const project_locals = to.clone(locals)
       project_locals.locale = locale
 
@@ -161,15 +171,15 @@ export default async function template(files, options = {}) { // eslint-disable-
           }
 
           renderLayout(page)
-            .then((stuff) => {
-              let code = stuff.content
+            .then((view) => {
+              let code = view.content
 
               if (options.pretty) {
                 code = beautify(code, 'html')
               }
 
               resolve({
-                locale: to.keys(resources).length ? locale : null,
+                locale,
                 code,
                 map: '',
                 language: utils.ext(file),

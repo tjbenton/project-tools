@@ -58,6 +58,10 @@ export default class Project extends Logger {
   ///#   // if `true` and `options.minify` is `false` then source maps will be added where possible
   ///#   sourcemaps: true,
   ///#
+  ///#   style: {}, // options for postcss
+  ///#   template: {}, // options for templates
+  ///#   javascript: {}, // options for rollup
+  ///#
   ///#   // this is used to determine which language should be used if the key for a language isn't specified.
   ///#   // note that locales don't have to be in a specific format, you can even have `cheesecake` as a locale.
   ///#   It just has to match what's in your `_content.json` file
@@ -115,6 +119,9 @@ export default class Project extends Logger {
       minify: false,
       pretty: true,
       sourcemaps: true,
+      style: {}, // options for postcss
+      template: {}, // options for templates
+      javascript: {}, // options for rollup
       fallback_locale: 'eng',
       default_build_locales: 'all',
       layout: '',
@@ -141,6 +148,18 @@ export default class Project extends Logger {
       } catch (a) {
         // do nothing
       }
+    }
+
+    // allow for layout to be set on the templates options and the base options
+    let layout = this.options.template.layout || this.options.layout || ''
+    // convert the layout path to be absolute
+    layout = !layout || path.isAbsolute(layout) ? layout : path.resolve(this.options.root, layout)
+    this.options.layout = this.options.template.layout = layout
+
+    if (layout) {
+      // find the base folder for the layouts location so we can add all the layout files to the app
+      [ this.options.layout_folder ] = this.options.layout.replace(this.options.root + path.sep, '').split(path.sep)
+      this.options.layout_folder = this.options.layout_folder ? `${this.options.root}/${this.options.layout_folder}` : ''
     }
 
     this.current_path = path.join(this.root, 'PROJECT')

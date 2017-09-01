@@ -48,7 +48,7 @@ export default async function compile(project_root, options = {}) {
     minify: false,
     sourcemaps: true,
     pretty: true,
-    style: {},
+    style: { dirs: [] },
     template: {},
     javascript: {},
     layout: '',
@@ -71,29 +71,21 @@ export default async function compile(project_root, options = {}) {
   const glob_options = { ignore: [ 'node_modules' ].concat(options.ignore), nodir: true }
   const root_files = await globby(path.join(project_root, '**', '*'), glob_options)
 
-  options.style.dirs = options.style.dirs || []
-  options.template.root = options.root
 
-  // allow for layout to be set on the templates options and the base options
-  let layout = options.template.layout || options.layout || ''
-
-  // convert the layout path to be absolute
-  layout = !layout || path.isAbsolute(layout) ? layout : path.resolve(options.root, layout)
-  options.layout = options.template.layout = layout
   let layout_files = []
-  if (layout) {
-    // find the base folder for the layouts location so we can add all the layout files to the app
-    let [ layout_folder ] = options.layout.replace(options.root + path.sep, '').split(path.sep)
-    layout_folder = layout_folder ? `${options.root}/${layout_folder}` : ''
+  if (options.layout_folder) {
+    layout_files = await globby(
+      options.layout_folder ? `${options.layout_folder}/**/*` : `${options.root}/_content.json`,
+      { nodir: true },
+    )
 
-    layout_files = await globby(layout_folder ? `${layout_folder}/**/*` : `${options.root}/_content.json`, { nodir: true })
-    if (layout_folder) {
-      options.layout_folder = layout_folder
-      options.style.dirs.push(layout_folder)
-    }
+    options.style.dirs.push(options.layout_folder)
+
     // prepend layout files so that the layout content file will be overwritten by the project specific content file
     root_files.unshift(...layout_files)
   }
+  options.template.root = options.root
+  options.template.layout_folder = options.layout_folder
 
   const processors = to.keys(utils.processors)
     .reduce((prev, next) => {

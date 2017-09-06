@@ -210,10 +210,13 @@ export class Logger {
         process.stdout.write(stamp)
       }
 
-      console.log(...args)
-
       if (type === 'error') {
-        throw new Error(args.join('\n'))
+        if (!(args[0] instanceof Error)) {
+          throw new Error(args[0])
+        }
+        throw args[0]
+      } else {
+        console.log(...args)
       }
     }
   }

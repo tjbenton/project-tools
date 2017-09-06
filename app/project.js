@@ -145,7 +145,8 @@ export default class Project extends Logger {
       const js_file = path.join(this.root, this.options.config)
       try {
         this.options = Object.assign(this.options, require(js_file) || {})
-      } catch (a) {
+      } catch (err) {
+        if (!err.message.includes('Cannot find module')) this.log('error', err)
         // do nothing
       }
     }

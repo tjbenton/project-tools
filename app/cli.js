@@ -277,18 +277,19 @@ export default function cli() {
       updateOptions()
       name = await getName(name)
 
-      const watcher = await project.watch(name, commander.locale)
-      project.log(`${chalk.green('Started:')}  ${chalk.bold(path.join(name, 'app', '**', '*'))}`)
-      watcher.on('change', (file) => {
-        project.log(`${chalk.green('Started:')}  ${file}`)
-      })
-      watcher.on('success', (file) => {
-        project.log(`${chalk.green('Finished:')} ${file}`)
-      })
-      watcher.on('error', (err, file) => {
-        project.log(`${chalk.red(file)} failed to updated`)
-        project.log('error', err)
-      })
+      const watcher = project.watch(name, commander.locale)
+        .on('change', (file) => project.log(`${chalk.yellow('Changed:')}  ${file}`))
+        .on('started', (glob) => project.log(`${chalk.green('Started:')}  ${glob}`))
+        .on('success', (glob, files) => {
+          console.log('files:', files.length);
+          project.log(`${chalk.green('Finished:')} ${glob}`)
+        })
+        .on('error', (err, file) => {
+          project.log(`${chalk.red(file)} failed to updated`)
+          project.log('error', err)
+        })
+
+      await watcher.ready()
     })
 
 

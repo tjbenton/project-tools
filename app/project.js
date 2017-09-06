@@ -425,54 +425,67 @@ export default class Project extends Logger {
   ///# @markup
   ///# import Project from 'project-tools'
   ///# const project = new Project()
-  ///# const watcher = await project.watch('project-1')
   ///#
-  ///# watcher.on('change', (file) => {
-  ///#   project.log(`${chalk.green('Started:')}  ${file}`)
-  ///# })
-  ///#
-  ///# watcher.on('success', (file) => {
-  ///#   project.log(`${chalk.green('Finished:')} ${file}`)
-  ///# })
-  ///#
-  ///# watcher.on('error', (err, file) => {
-  ///#   project.log(`${chalk.red(file)} failed to updated`)
-  ///#   project.log('error', err)
-  ///# })
-  ///# @async
-  async watch(name) {
+  ///# async function watch(project_name) {
+  ///#   const watcher = await project.watch('project-1')
+  ///#      .on('change', (file) => project.log(`${chalk.green('Started:')}  ${file}`))
+  ///#      .on('success', (file) => project.log(`${chalk.green('Finished:')} ${file}`))
+  ///#      .on('error', (err, file) => {
+  ///#        project.log(`${chalk.red(file)} failed to updated`)
+  ///#        project.log('error', err)
+  ///#      })
+  ///#   // this will wait for the initial build to run
+  ///#   await watcher.ready()
+  ///# }
+  watch(name, locales = this.options.default_build_locales) {
     name = name || this.current
-    const root = path.join(this.root, 'projects', name, 'app')
-    const watcher = chokidar.watch(path.join(root, '**', '*'), {
+
+    const globs_to_watch = [ path.join('projects', name, 'app'), this.options.layout_folder ].filter(Boolean)
+
+    const watcher = chokidar.watch(globs_to_watch, {
       persistent: true,
-      cwd: path.join(this.root, 'projects'),
+      cwd: this.root,
       ignoreInitial: true,
     })
-    const ready = (() => new Promise((resolve) => watcher.on('ready', resolve)))()
 
-    const renderer = await this.build(name)
-    const render = async (file) => {
+    let renderer
+    const initial_glob = path.join('projects', name, 'app', '**', '*')
+    const render = async (glob) => {
       try {
-        await renderer(file && file.split(/app(?:\/|\\\\)/)[1])
-        watcher.emit('success', file)
+        if (!renderer) {
+          renderer = await this.build(name, locales)
+        }
+
+        if (
+          glob.includes(this.options.layout_folder) ||
+          glob.includes('.json')
+        ) {
+          glob = initial_glob
+        }
+
+        watcher.emit('started', glob)
+        const result = await renderer(glob.split(/app(?:\/|\\\\)/)[1])
+        watcher.emit('success', glob, result)
       } catch (err) {
-        watcher.emit('error', err, file)
+        watcher.emit('error', err, glob)
       }
     }
 
-    const log_file = path.join(name, 'app', '**', '*')
-    try {
-      await render(log_file)
+    watcher.ready = () => {
       // wait for the watcher to be ready before returning
-      await ready
-      process.nextTick(() => watcher.emit('success', log_file))
-    } catch (err) {
-      process.nextTick(() => watcher.emit('error', err, log_file))
+      return new Promise((resolve) => {
+        watcher.on('ready', () => resolve(render(initial_glob)))
+      })
     }
 
+
+    process.nextTick(() => {
+      // add these events on after the next tick so that any events that
+      // the user adds will be run first
+      watcher.on('add', render).on('change', render)
+    })
+
     return watcher
-      .on('add', render)
-      .on('change', render)
   }
 
   ///# @name list

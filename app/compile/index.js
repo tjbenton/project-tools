@@ -68,7 +68,11 @@ export default async function compile(project_root, options = {}) {
 
   const [ , project_name ] = project_root.replace(options.root + path.sep, '').split(path.sep)
 
-  const glob_options = { ignore: [ 'node_modules' ].concat(options.ignore), nodir: true }
+  const glob_options = {
+    ignore: [ 'node_modules' ].concat(options.ignore),
+    nodir: true,
+    cwd: options.root,
+  }
   const root_files = await globby(path.join(project_root, '**', '*'), glob_options)
 
 
@@ -160,7 +164,11 @@ export default async function compile(project_root, options = {}) {
   ///# @returns {array} - files that have been rendered
   return async (glob = '**/*', locales = 'all') => {
     debug('start render')
-    let files = await globby([ ...layout_files, glob ], glob_options)
+    const globs = [ glob ]
+    if (glob.includes('**/*')) {
+      globs.unshift(...layout_files)
+    }
+    let files = await globby(globs, glob_options)
 
     files = files
       .filter((file) => !utils.shouldIgnore(file))

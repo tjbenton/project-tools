@@ -171,13 +171,17 @@ export default async function compile(project_root, options = {}) {
     let files = await globby(globs, glob_options)
 
     files = files
-      .filter((file) => !utils.shouldIgnore(file))
       // move all the template files to the second array and any other file to the first array
       .reduce((prev, file) => {
         const is_template_file = utils.processors.template.includes(utils.ext(file)) ? 1 : 0
 
         // if the file is a template file and is a layout file then ignore it
-        if (is_template_file && layout_files.includes(file)) {
+        if (
+          utils.shouldIgnore(file) || (
+            is_template_file &&
+            layout_files.includes(file)
+          )
+        ) {
           return prev
         }
 

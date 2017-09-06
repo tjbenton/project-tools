@@ -197,7 +197,9 @@ export class Logger {
       }
 
       const now = new Date()
-      const timestamp = [ now.getHours(), now.getMinutes(), now.getSeconds() ].join(':')
+      const timestamp = [ now.getHours(), now.getMinutes(), now.getSeconds() ]
+        .map((number) => number < 10 ? `0${number}` : number)
+        .join(':')
 
       // print the current time.
       let stamp = this.options.timestamp ? `[${chalk.magenta(timestamp)}] ` : ''

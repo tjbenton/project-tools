@@ -1,3 +1,4 @@
+/* eslint max-lines: [ 2, { max: 350, skipBlankLines: true, skipComments: true, } ] */
 import path from 'path'
 import fs from 'fs-extra-promisify'
 import { forEach, map } from 'async-array-methods'
@@ -159,7 +160,7 @@ export default class Project extends Logger {
 
     if (layout) {
       // find the base folder for the layouts location so we can add all the layout files to the app
-      [ this.options.layout_folder ] = this.options.layout.replace(this.options.root + path.sep, '').split(path.sep)
+      [ this.options.layout_folder ] = this.stripRoot(this.options.layout).split(path.sep)
       this.options.layout_folder = this.options.layout_folder ? `${this.options.root}/${this.options.layout_folder}` : ''
     }
 
@@ -171,6 +172,14 @@ export default class Project extends Logger {
     } catch (e) {
       this.current = null
     }
+  }
+
+  ///# @name stripRoot
+  ///# @description This will remove the root from a file path
+  ///# @arg {string} file_path - The file path to remove the root from
+  ///# @returns {string} The file path without the root
+  stripRoot(file_path) {
+    return file_path.replace(this.options.root + path.sep, '')
   }
 
   ///# @name init
@@ -463,10 +472,15 @@ export default class Project extends Logger {
         ) {
           glob = initial_glob
         }
+        const result = renderer(glob.split(/app(?:\/|\\\\)/)[1])
+
+        // add the layout files the
+        if (this.options.layout_folder && glob.includes('**/*')) {
+          glob += `, ${path.join(this.stripRoot(this.options.layout_folder), '**', '*')}`
+        }
 
         watcher.emit('started', glob)
-        const result = await renderer(glob.split(/app(?:\/|\\\\)/)[1])
-        watcher.emit('success', glob, result)
+        watcher.emit('success', glob, await result)
       } catch (err) {
         watcher.emit('error', err, glob)
       }

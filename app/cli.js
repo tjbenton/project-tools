@@ -281,8 +281,9 @@ export default function cli() {
         .on('change', (file) => project.log(`${chalk.yellow('Changed:')}  ${file}`))
         .on('started', (glob) => project.log(`${chalk.green('Started:')}  ${glob}`))
         .on('success', (glob, files) => {
-          console.log('files:', files.length);
-          project.log(`${chalk.green('Finished:')} ${glob}`)
+          const length = files.length > 1 ? `(${files.length} files)` : ''
+
+          project.log(`${chalk.green('Finished:')} ${glob} ${length}`.trim())
         })
         .on('error', (err, file) => {
           project.log(`${chalk.red(file)} failed to updated`)

@@ -581,10 +581,4 @@ export default class Project extends Logger {
 
     this.runOption('publish', name)
   }
-
-  ///# @name translate
-  ///# @todo {4} figure out a good way to publish items
-  translate() { // eslint-disable-line
-    console.log('translate')
-  }
 }

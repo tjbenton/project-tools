@@ -179,7 +179,3 @@ options.template = {
 #### `options.publish`
 
 todo
-
-#### `options.translate`
-
-todo

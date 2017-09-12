@@ -39,7 +39,7 @@ test.before(async () => {
 })
 
 test('functions exist', (t) => {
-  const methods = [ 'init', 'create', 'build', 'start', 'stop', 'watch', 'list', 'use', 'publish', 'translate' ]
+  const methods = [ 'init', 'create', 'build', 'start', 'stop', 'watch', 'list', 'use', 'publish' ]
 
   methods.forEach((method) => {
     t.truthy(typeof Project.prototype[method] === 'function', `${method} is defined`)
@@ -83,7 +83,7 @@ test.group('create -', (test) => {
       t.pass('failed correctly')
     }
     inspect.restore()
-    t.is(stripColor(inspect.output.join('')).trim(), 'error: name must be a string')
+    t.truthy(stripColor(inspect.output.join('')).trim().includes('error: name must be a string'))
   })
 
   test('with name, no create option', async (t) => {
@@ -246,9 +246,9 @@ test.group('watch', (test) => {
     const project = new Project({ root, log: false })
     t.plan(11)
     t.falsy(await fs.exists(file.dist))
-    const watcher = await project.watch(name)
+    const watcher = project.watch(name)
+    await watcher.ready()
     const files = await globby(path.join('**', '*'), { cwd: root, nodir: true })
-
     t.is(files.length, 3)
     t.is(path.basename(files[1]), 'index.css')
     t.is(path.basename(files[2]), 'index.css.map')
@@ -259,7 +259,7 @@ test.group('watch', (test) => {
     const rest = () => {
       return new Promise((resolve) => {
         watcher.on('success', async (file_path) => {
-          t.is(file_path, 'style-project/app/style/index.styl')
+          t.is(file_path, 'projects/style-project/app/style/index.styl')
           const content = to.string(await fs.readFile(file.dist))
           t.not(content, file.expected)
           t.truthy(/\.woohoo {/g.test(content))

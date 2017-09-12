@@ -211,10 +211,10 @@ export class Logger {
       }
 
       if (type === 'error') {
-        if (!(args[0] instanceof Error)) {
-          throw new Error(args[0])
-        }
-        throw args[0]
+        const error = args[0] instanceof Error ? args[0] : new Error(args[0])
+        error.stack = error.stack.replace('Error: ', '')
+        console.log(error)
+        throw error
       } else {
         console.log(...args)
       }

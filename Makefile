@@ -4,7 +4,7 @@ PATH := ./node_modules/.bin:$(PATH)
 SHELL := /bin/bash
 args = $(filter-out $@, $(MAKECMDGOALS))
 
-.PHONY: install build compile watch lint test ci
+.PHONY: install build compile watch lint test ci coverage
 
 install:
 	@if type yarn 2>/dev/null; then \
@@ -45,3 +45,6 @@ ci:
 publish release:
 	@np $(args)
 	@git push --follow-tags origin master
+
+coverage:
+	nyc make test

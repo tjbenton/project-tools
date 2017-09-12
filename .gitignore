@@ -4,3 +4,4 @@ logs/
 /projects/
 PROJECT
 *.log
+.nyc*

@@ -306,6 +306,8 @@ export default function cli() {
           list.unshift('')
         }
         project.log(list.join('\n'))
+      } else {
+        project.log(`No projects have been created. To create a new project run ${chalk.red('project create')}`)
       }
     })
 

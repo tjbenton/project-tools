@@ -65,11 +65,12 @@ export default class Project extends Logger {
   ///#
   ///#   // this is used to determine which language should be used if the key for a language isn't specified.
   ///#   // note that locales don't have to be in a specific format, you can even have `cheesecake` as a locale.
-  ///#   It just has to match what's in your `_content.json` file
+  ///#   // It just has to match what's in your `_content.json` file for your project, and layout.
   ///#   fallback_locale: 'eng',
   ///#
   ///#   // this indicates the default locale that should be built. This option can be a string,
-  ///#   // comma delimited list, or an array of values. You can also use the `all` keyword to build all the locales
+  ///#   // comma delimited list, or an array of values. You can also use the `all` keyword, this will
+  ///#   // build all the locales that you've specified in your specific project.
   ///#   default_build_locales: 'all',
   ///#
   ///#   // this is the path to the layout.
@@ -573,7 +574,6 @@ export default class Project extends Logger {
   ///# @name publish
   ///# @todo {4} figure out a good way to publish items
   publish(name) {
-    console.log('publish')
     if (!this.options.publish) {
       this.log('error', 'You must add a publish function to the `.projectrc.js` file')
       return

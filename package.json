@@ -12,6 +12,10 @@
   },
   "author": "Tyler Benton <tjbenton21@gmail.com> (https://github.com/tjbenton)",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tjbenton/project-tools.git"
+  },
   "dependencies": {
     "async-array-methods": "^2.1.0",
     "babel-runtime": "^6.11.6",

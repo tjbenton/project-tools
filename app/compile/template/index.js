@@ -189,10 +189,26 @@ export default async function template(files, options = {}) { // eslint-disable-
         })
       })
     }
-
+    // WORK HERE
     if (locales_to_build.includes('all')) {
-      locales_to_build = await resolveContent(files.filter((content_file) => content_file.includes(locals.project_root)))
-      locales_to_build = to.keys(locales_to_build)
+      const paths = files.filter((content_file) => content_file.includes(locals.project_root))
+      const regex = /\/locales\/([A-z]{2,4})/
+      // if some files have the correct structure for locales, then we need to specify how locales are built a
+      // little differently.
+      if (paths.some((filepath) => regex.test(filepath))) {
+        locales_to_build =
+          _.compact(
+            _.uniq(
+              paths
+                .map((filepath) =>
+                  (regex.exec(filepath) || [])[1],
+                ),
+            ),
+          )
+      } else {
+        locales_to_build = await resolveContent(paths)
+        locales_to_build = to.keys(locales_to_build)
+      }
     }
 
     if (locales_to_build.length) {

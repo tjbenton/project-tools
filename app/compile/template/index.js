@@ -118,7 +118,10 @@ export default async function template(files, options = {}) { // eslint-disable-
     // little differently.
     // filepath must match `.../locales/LOCALE-CODE/...`
     const locales_regex = /\/locales\/(.+)\//
-
+    // if the locales folder has a file in it that isnt' a folder, throw an error
+    if (!locales_regex.test(file) && /\/locales\/(.+)/.test()) {
+      throw new Error('All items in the "locales" folder must be folders.')
+    }
     locals.file = file
 
     let { locales: locales_to_build } = locals

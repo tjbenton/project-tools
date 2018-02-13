@@ -126,7 +126,7 @@ export default async function template(files, options = {}) { // eslint-disable-
     // if we want to build all locales, if the file satisfies the locales_regex, then build each
     // file according to its respective locale. Otherwise, use the specified locale in locals.locales.
     if (locales_to_build === 'all') {
-      locales_to_build = to.array(locales_regex.exec(file)[1] || locales_to_build, /[\s,]+/)
+      locales_to_build = to.array((locales_regex.exec(file) || [])[1] || locales_to_build, /[\s,]+/)
     // if we don't want to build all locales, then we still want to build items in a locales folder, just not the ones
     // that aren't the specified locales.
     } else {

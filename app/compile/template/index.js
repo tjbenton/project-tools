@@ -130,7 +130,7 @@ export default async function template(files, options = {}) { // eslint-disable-
     // if we don't want to build all locales, then we still want to build items in a locales folder, just not the ones
     // that aren't the specified locales.
     } else {
-      locales_to_build = _.intersection(to.array(locales_regex.exec(file)[1]), to.array(locales_to_build, /[\s,]+/))
+      locales_to_build = _.intersection(to.array((locales_regex.exec(file) || [])[1]), to.array(locales_to_build, /[\s,]+/))
     }
 
     let resources

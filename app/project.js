@@ -136,6 +136,10 @@ export default class Project extends Logger {
         const dist = item.path.replace(/\bapp\b/, 'dist')
 
         if (item.processor === 'template' && locale) {
+          const locales_regex = /\/locales\/([a-z]{2,4}(-[a-zA-Z]{2})?)/
+          if (locales_regex.test(item.src)) {
+            return dist
+          }
           return dist.replace(`${item.file}`, path.join(locale, item.file))
         }
         return dist

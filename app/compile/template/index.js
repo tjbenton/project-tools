@@ -114,6 +114,8 @@ export default async function template(files, options = {}) { // eslint-disable-
   ///# @async
   return async (file, locals = {}) => {
     debug('render:start')
+    const locales_regex = /\/locales\/([a-z]{2,4}(-[a-zA-Z]{2})?)/
+
     locals.file = file
 
     let { locales: locales_to_build } = locals
@@ -133,7 +135,7 @@ export default async function template(files, options = {}) { // eslint-disable-
 
     function render(locale = null) {
       const project_locals = to.clone(locals)
-      project_locals.locale = locale
+      project_locals.locale = locales_regex.exec(file)[1] || locale
 
       // create a new instance of i18n so that multiple builds can run at the same time
       const i18nInstance = i18n.createInstance()
@@ -142,7 +144,7 @@ export default async function template(files, options = {}) { // eslint-disable-
         .init({
           overloadTranslationOptionHandler: sprintf.overloadTranslationOptionHandler,
           resources,
-          lng: locale || options.fallback_locale,
+          lng: locales_regex.exec(file)[1] || locale || options.fallback_locale,
           fallbackLng: options.fallback_locale, // if a language doesn't have a key defined then it will fallback to the one set here
           interpolation: { escapeValue: false }, // doesn't escape html characters so html can be appart of the content
           returnObjects: true, // returns arrays and objects as arrays and objects
@@ -195,7 +197,6 @@ export default async function template(files, options = {}) { // eslint-disable-
       // if some files have the correct structure for locales, then we need to specify how locales are built a
       // little differently.
       // filepath must match `.../locales/LOCALE-CODE/...`
-      const locales_regex = /\/locales\/([a-z]{2,4}(-[a-zA-Z]{2})?)/
       locales_to_build = await resolveContent(paths)
       locales_to_build = to.keys(locales_to_build)
       locales_to_build =

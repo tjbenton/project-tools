@@ -117,7 +117,7 @@ export default async function template(files, options = {}) { // eslint-disable-
     // if some files have the correct structure for locales, then we need to specify how locales are built a
     // little differently.
     // filepath must match `.../locales/LOCALE-CODE/...`
-    const locales_regex = /\/locales\/([a-z]{2,4}(-[a-zA-Z]{2})?)/
+    const locales_regex = /\/locales\/(.+)\//
 
     locals.file = file
 

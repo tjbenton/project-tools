@@ -139,6 +139,7 @@ export default async function template(files, options = {}) { // eslint-disable-
     function render(locale = null) {
       const project_locals = to.clone(locals)
       project_locals.locale = locale
+
       // create a new instance of i18n so that multiple builds can run at the same time
       const i18nInstance = i18n.createInstance()
       i18nInstance

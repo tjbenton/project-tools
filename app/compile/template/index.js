@@ -193,7 +193,7 @@ export default async function template(files, options = {}) { // eslint-disable-
         })
       })
     }
-    // WORK HERE
+
     if (locales_to_build.includes('all')) {
       locales_to_build = await resolveContent(files.filter((content_file) => content_file.includes(locals.project_root)))
       locales_to_build = to.keys(locales_to_build)

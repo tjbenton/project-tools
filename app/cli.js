@@ -189,7 +189,7 @@ export default function cli() {
     .option(
       '-i, --image [image]',
       'Sets the docker image to use',
-      'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest',
+      'nginx:alpine',
     )
     .option('-f, --force', 'force restarts the server if it already exists', false)
     .action(async ({ port: ports, env, image, force }) => {

@@ -128,7 +128,9 @@ export function exec(command, stdio = false, log = false) {
     if (child.stderr) {
       child.stderr.on('data', (err) => {
         err = unquote(`${err}`.trim())
-        console.error(chalk.red('[Error]:'), err)
+        if (log) {
+          console.error(chalk.red('[Error]:'), err)
+        }
         reject(err)
       })
     }

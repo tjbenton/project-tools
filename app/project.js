@@ -261,7 +261,7 @@ export default class Project extends Logger {
     options = Object.assign({
       ports: [ '80:80' ],
       env: [ 'MYSITE=marketamerica.com' ],
-      image: 'artifactory.marketamerica.com:8443/internalsystems/alpine-linux/nginx:latest',
+      image: 'nginx:alpine',
       force: false,
     }, options)
 
@@ -298,14 +298,44 @@ export default class Project extends Logger {
       options.image,
     ].join(' ')
 
-    try {
-      await exec(cmd)
-      this.log('server was started http://localhost')
-      await this.runOption('poststart', null, 'started')
-    } catch (e) {
-      this.log('error', e)
-      await this.runOption('poststart', e, 'failed')
+    // !!!
+    // !!! WARNING STUPID CODE ALERT also not my fault
+    // !!!
+    // !!! This super awesome run function is the by product of docker being weird.
+    // !!! We don't want to print the container id every time we run `project start`
+    // !!! But docker requires you to run use `inherit` when you run `docker run`,
+    // !!! but only if the container doesn't exist locally. So to get around that
+    // !!! silly behavior we have use this run function which will attempt to run
+    // !!! the `docker run` command once and if it fails because the container
+    // !!! doesn't exist locally then we will attempt to run it a second time.
+    // !!! The second time it runs we pass in `'inherit'` which will allow docker
+    // !!! to pull down the image locally
+    // !!!
+    let should_run_again = true
+    /* istanbul ignore next - to hard to test */
+    const run = async () => {
+      const inherit = !should_run_again ? 'inherit' : false
+      try {
+        try {
+          await exec(cmd, inherit)
+        } catch (e) {
+          if (should_run_again) {
+            should_run_again = false
+            options.force = true
+            return run()
+          }
+          throw e
+        }
+
+        this.log('server was started http://localhost')
+        await this.runOption('poststart', null, 'started')
+      } catch (e) {
+        this.log('error', e)
+        await this.runOption('poststart', e, 'failed')
+      }
     }
+
+    return run()
   }
 
   ///# @name dockerCheck

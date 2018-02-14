@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import path from 'path'
 import commander from 'commander'
 import to from 'to-js'

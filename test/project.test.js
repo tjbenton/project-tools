@@ -7,6 +7,7 @@ import Project from '../dist/project.js'
 import touch from 'touch'
 import { stdout } from 'test-console'
 import stripColor from 'strip-ansi'
+import { stripRoot } from './utils'
 
 const modify = async (src, contents) => {
   if (contents) {
@@ -162,7 +163,7 @@ test.group('build', (test) => {
         },
       })
       const render = await project.build('project-1')
-      t.snapshot(await render())
+      t.snapshot(stripRoot(await render()))
     })
   })
 
@@ -174,7 +175,7 @@ test.group('build', (test) => {
       })
 
       const render = await project.build('project-1')
-      t.snapshot(await render())
+      t.snapshot(stripRoot(await render()))
     })
 
     test('with layout css', async (t) => {
@@ -186,7 +187,7 @@ test.group('build', (test) => {
       })
 
       const render = await project.build('with-layout-css')
-      t.snapshot(await render())
+      t.snapshot(stripRoot(await render()))
     })
   })
 
@@ -197,7 +198,7 @@ test.group('build', (test) => {
     })
 
     const render = await project.build('project-1')
-    t.snapshot(await render())
+    t.snapshot(stripRoot(await render()))
     t.pass()
   })
 
@@ -212,7 +213,7 @@ test.group('build', (test) => {
       })
 
       const render = await project.build('project-1')
-      t.snapshot(await render())
+      t.snapshot(stripRoot(await render()))
     })
   })
 })

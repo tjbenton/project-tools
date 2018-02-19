@@ -2,6 +2,7 @@ import ava from 'ava-spec'
 const test = ava.group('compile:')
 import compile from '../../dist/compile'
 import path from 'path'
+import { stripRoot } from '../utils'
 
 const fixtures = path.join(__dirname, 'fixtures')
 
@@ -51,7 +52,7 @@ test.group('template', (test) => {
     test(folder, async (t) => {
       const render = await compile(root, { root, layout: '_layout.html' })
       const actual = await render(path.join(root, '**', '*'))
-      t.snapshot(actual)
+      t.snapshot(stripRoot(actual))
     })
   })
 })

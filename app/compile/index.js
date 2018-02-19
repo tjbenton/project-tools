@@ -211,6 +211,6 @@ export default async function compile(project_root, options = {}) {
     files[1] = await run(files[1], locales)
 
     debug('end render')
-    return to.flatten(files)
+    return to.flatten(files).filter(Boolean)
   }
 }

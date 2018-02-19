@@ -136,7 +136,7 @@ export default async function template(files, options = {}, project_root) { // e
     let { locales: locales_to_build } = locals
     delete locals.locales
 
-    if (locales_to_build.includes('all')) {
+    if (locales_to_build && locales_to_build.includes('all')) {
       locales_to_build = all_locales
     }
 

@@ -143,10 +143,10 @@ export default async function template(files, options = {}, project_root) { // e
     if (locales_from_folders) {
       const parts = file.split(path.sep)
       const file_locale = parts[parts.indexOf('locales') + 1]
-      locales_to_build = [ file_locale ]
-      if (!locales_to_build.some((locale) => file.includes(`${path.sep}${locale}${path.sep}`))) {
+      if (!locales_to_build.includes(file_locale)) {
         return null
       }
+      locales_to_build = [ file_locale ]
     }
 
     let resources

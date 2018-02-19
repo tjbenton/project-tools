@@ -154,7 +154,7 @@ export default async function compile(project_root, options = {}) {
   }
 
   // run the initial setup for templates and reset it to call in the `run` function above
-  processors.template = await processors.template(root_files, options.template)
+  processors.template = await processors.template(root_files, options.template, project_root)
 
   debug('end  setup')
   ///# @name render

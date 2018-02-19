@@ -44,7 +44,7 @@ const debug = require('debug')('compile:template')
 /// }
 /// ```
 /// @async
-export default async function template(files, options = {}) { // eslint-disable-line
+export default async function template(files, options = {}, project_root) { // eslint-disable-line
   debug('start')
   files = to.array(files)
   options = to.extend({
@@ -69,12 +69,29 @@ export default async function template(files, options = {}) { // eslint-disable-
   app.option('cwd', options.project_root)
 
   const template_files = files.filter((file) => utils.type(file) === 'template') // find only the template files
+  const project_files = files.filter((file) => file.includes(project_root))
+
   addTemplateLanguages(app, options, template_files) // adds all the template languages available
 
   let initial_resources = await resolveContent(files) // gets the content to use for the project for the initial run
+  let all_locales = [ ...to.keys(initial_resources) ]
+  let locales_from_folders = false
+
+  for (const file of project_files) {
+    const parts = file.split(path.sep)
+    const locale = parts[parts.indexOf('locales') + 1]
+    // if there is a file in the locales folder, we want to error
+    if (locale.includes('.')) {
+      throw new Error('All items in the "locales" folder must be folders.')
+    }
+    locales_from_folders = true
+    all_locales.push(locale)
+  }
+
+  all_locales = to.unique(all_locales)
 
   // reads all the template files and adds them to the app so they can be compiled
-  await addTemplateFiles(app, options, template_files, to.keys(initial_resources))
+  await addTemplateFiles(app, options, template_files, all_locales)
 
   // find the correct amount of spaces to indent the contents before a layout's applied
   let spaces = app.find(options.layout, 'layouts')
@@ -114,26 +131,22 @@ export default async function template(files, options = {}) { // eslint-disable-
   ///# @async
   return async (file, locals = {}) => {
     debug('render:start')
-    // if some files have the correct structure for locales, then we need to specify how locales are built a
-    // little differently.
-    // filepath must match `.../locales/LOCALE-CODE/...`
-    const locales_regex = /\/locales\/(.+)\//
-    // if the locales folder has a file in it that isnt' a folder, throw an error
-    if (!locales_regex.test(file) && /\/locales\/(.+)/.test()) {
-      throw new Error('All items in the "locales" folder must be folders.')
-    }
     locals.file = file
 
     let { locales: locales_to_build } = locals
     delete locals.locales
-    // if we want to build all locales, if the file satisfies the locales_regex, then build each
-    // file according to its respective locale. Otherwise, use the specified locale in locals.locales.
-    if (locales_to_build === 'all') {
-      locales_to_build = to.array((locales_regex.exec(file) || [])[1] || locales_to_build, /[\s,]+/)
-    // if we don't want to build all locales, then we still want to build items in a locales folder, just not the ones
-    // that aren't the specified locales.
-    } else {
-      locales_to_build = _.intersection(to.array((locales_regex.exec(file) || [])[1]), to.array(locales_to_build, /[\s,]+/))
+
+    if (locales_to_build.includes('all')) {
+      locales_to_build = all_locales
+    }
+
+    if (locales_from_folders) {
+      const parts = file.split(path.sep)
+      const file_locale = parts[parts.indexOf('locales') + 1]
+      locales_to_build = [ file_locale ]
+      if (!locales_to_build.some((locale) => file.includes(`${path.sep}${locale}${path.sep}`))) {
+        return null
+      }
     }
 
     let resources
@@ -204,11 +217,6 @@ export default async function template(files, options = {}) { // eslint-disable-
             .catch(reject)
         })
       })
-    }
-
-    if (locales_to_build.includes('all')) {
-      locales_to_build = await resolveContent(files.filter((content_file) => content_file.includes(locals.project_root)))
-      locales_to_build = to.keys(locales_to_build)
     }
 
     if (locales_to_build.length) {

@@ -142,12 +142,17 @@ export default async function template(files, options = {}, project_root) { // e
     if (locales_to_build && locales_to_build.includes('all')) {
       // if a locale is found to be in `locales_to_build` but 
       // is not in `all_locales`, we want to throw an error.
-      const unbuildable_locales = locales_to_build.filter((locale) => {
-        return locale !== 'all' && all_locales.indexOf(locale) === -1
-      })
+      // NOTE: `locales_to_build` is typically an array, but it
+      // can sometimes just be the string 'all' if nothing is specified on the --locale flag.
+      // if `locales_to_build` is just 'all', then we don't have to do all this checking.
+      if (locales_to_build !== 'all') {
+        const unbuildable_locales = locales_to_build.filter((locale) => {
+          return locale !== 'all' && all_locales.indexOf(locale) === -1
+        })
 
-      if (unbuildable_locales.length) {
-        throw new Error(`The locales "${unbuildable_locales}" could not be built.`)
+        if (unbuildable_locales.length) {
+          throw new Error(`The locales "${unbuildable_locales}" could not be built.`)
+        }
       }
 
       locales_to_build = all_locales

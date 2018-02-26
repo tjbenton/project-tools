@@ -138,10 +138,11 @@ export default class Project extends Logger {
         if (item.processor === 'template' && locale) {
           const parts = dist.split(path.sep)
           const locales_index = parts.indexOf('locales')
-          const folder = parts[locales_index + 1]
-          if (!folder.includes('.')) {
-            parts.splice(locales_index, 1)
-            return parts.join(path.sep)
+          if (locales_index > -1) {
+            const folder = parts[locales_index + 1]
+            if (!folder.includes('.')) {
+              return path.normalize(dist.replace(/\blocales\b/, ''))
+            }
           }
           return dist.replace(`${item.file}`, path.join(locale, item.file))
         }

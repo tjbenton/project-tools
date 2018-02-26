@@ -149,7 +149,6 @@ export default async function template(files, options = {}, project_root) { // e
       throw new Error(`The locales "${unbuildable_locales}" could not be built.`)
     }
 
-
     if (locales_to_build && locales_to_build.includes('all')) {
       locales_to_build = all_locales
     }

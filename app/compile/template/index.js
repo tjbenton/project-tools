@@ -74,18 +74,22 @@ export default async function template(files, options = {}, project_root) { // e
   addTemplateLanguages(app, options, template_files) // adds all the template languages available
 
   let initial_resources = await resolveContent(files) // gets the content to use for the project for the initial run
-  let all_locales = [ ...to.keys(initial_resources) ]
+  let all_locales = to.keys(initial_resources)
   let locales_from_folders = false
 
   for (const file of project_files) {
     const parts = file.split(path.sep)
-    const locale = parts[parts.indexOf('locales') + 1]
-    // if there is a file in the locales folder, we want to error
-    if (locale.includes('.')) {
-      throw new Error('All items in the "locales" folder must be folders.')
+    const locales_index = parts.indexOf('locales')
+    if (locales_index > -1) {
+      const locale = parts[locales_index + 1]
+      // if there is a file in the locales folder, we want to error
+      if (locale.includes('.')) {
+        throw new Error('All items in the "locales" folder must be folders.')
+      } else {
+        locales_from_folders = true
+      }
+      all_locales.push(locale)
     }
-    locales_from_folders = true
-    all_locales.push(locale)
   }
 
   all_locales = to.unique(all_locales)

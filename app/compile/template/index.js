@@ -139,17 +139,17 @@ export default async function template(files, options = {}, project_root) { // e
     let { locales: locales_to_build } = locals
     delete locals.locales
 
-    // if a locale is found to be in `locales_to_build` but 
-    // is not in `all_locales`, we want to throw an error.
-    const unbuildable_locales = locales_to_build.filter((locale) => {
-      return all_locales.indexOf(locale) === -1
-    })
-
-    if (unbuildable_locales.length) {
-      throw new Error(`The locales "${unbuildable_locales}" could not be built.`)
-    }
-
     if (locales_to_build && locales_to_build.includes('all')) {
+      // if a locale is found to be in `locales_to_build` but 
+      // is not in `all_locales`, we want to throw an error.
+      const unbuildable_locales = locales_to_build.filter((locale) => {
+        return locale !== 'all' && all_locales.indexOf(locale) === -1
+      })
+
+      if (unbuildable_locales.length) {
+        throw new Error(`The locales "${unbuildable_locales}" could not be built.`)
+      }
+
       locales_to_build = all_locales
     }
 

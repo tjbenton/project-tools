@@ -5,3 +5,4 @@ logs/
 PROJECT
 *.log
 .nyc*
+test/fixtures/temp-project-fixtures

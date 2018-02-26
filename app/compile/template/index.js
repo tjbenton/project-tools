@@ -85,9 +85,8 @@ export default async function template(files, options = {}, project_root) { // e
       // if there is a file in the locales folder, we want to error
       if (locale.includes('.')) {
         throw new Error('All items in the "locales" folder must be folders.')
-      } else {
-        locales_from_folders = true
       }
+      locales_from_folders = true
       all_locales.push(locale)
     }
   }
@@ -139,6 +138,17 @@ export default async function template(files, options = {}, project_root) { // e
 
     let { locales: locales_to_build } = locals
     delete locals.locales
+
+    // if a locale is found to be in `locales_to_build` but 
+    // is not in `all_locales`, we want to throw an error.
+    const unbuildable_locales = locales_to_build.filter((locale) => {
+      return all_locales.indexOf(locale) === -1
+    })
+
+    if (unbuildable_locales.length) {
+      throw new Error(`The locales "${unbuildable_locales}" could not be built.`)
+    }
+
 
     if (locales_to_build && locales_to_build.includes('all')) {
       locales_to_build = all_locales

@@ -237,7 +237,7 @@ export default async function template(files, options = {}, project_root) { // e
       })
     }
 
-    if (locales_to_build.length) {
+    if ((locales_to_build || []).length) {
       return map(locales_to_build, render)
     }
 

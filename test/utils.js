@@ -11,5 +11,6 @@ module.exports.stripRoot = function stripRoot(obj) {
     obj[key] = obj[key].replace(root, '')
   }
 
+  obj.map = obj.map.replace(root, '')
   return obj
 }

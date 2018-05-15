@@ -140,7 +140,7 @@ export default async function template(files, options = {}, project_root) { // e
     delete locals.locales
 
     if (locales_to_build && locales_to_build.includes('all')) {
-      // if a locale is found to be in `locales_to_build` but 
+      // if a locale is found to be in `locales_to_build` but
       // is not in `all_locales`, we want to throw an error.
       // NOTE: `locales_to_build` is typically an array, but it
       // can sometimes just be the string 'all' if nothing is specified on the --locale flag.

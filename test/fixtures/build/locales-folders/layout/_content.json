@@ -1,0 +1,33 @@
+{
+  "eng": {
+    "translation": {
+      "title": "title eng",
+      "overwritten": "this should be overwritten eng",
+      "list": [
+        "one",
+        "two",
+        "three"
+      ]
+    }
+  },
+  "mex": {
+    "translation": {
+      "title": "title mex",
+      "list": [
+        "uno",
+        "dos",
+        "tres"
+      ]
+    }
+  },
+  "twn": {
+    "translation": {
+      "title": "title twn",
+      "list": [
+        "一",
+        "二",
+        "三"
+      ]
+    }
+  }
+}

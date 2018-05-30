@@ -216,6 +216,57 @@ test.group('build', (test) => {
       t.snapshot(stripRoot(await render()))
     })
   })
+
+  test.group('locales with folders -', (test) => {
+    const root = path.join(fixtures, 'locales-folders')
+    test('project-1 / all', async (t) => {
+      const project = new Project({
+        root,
+        log: false,
+        fallback_locale: 'eng',
+        layout: 'layout/_layout.html',
+      })
+
+      const render = await project.build('project-1')
+      t.snapshot(stripRoot(await render()))
+    })
+
+    test('project-1 / twn only', async (t) => {
+      const project = new Project({
+        root,
+        log: false,
+        fallback_locale: 'eng',
+        layout: 'layout/_layout.html',
+      })
+
+      const render = await project.build('project-1', 'twn')
+      t.snapshot(stripRoot(await render()))
+    })
+
+    test('project-1 / non-existant locale', async (t) => {
+      const project = new Project({
+        root,
+        log: false,
+        fallback_locale: 'eng',
+        layout: 'layout/_layout.html',
+      })
+
+      const render = await project.build('project-1', 'thisisntvalid')
+      t.snapshot(stripRoot(await render()))
+    })
+
+    test('project-2 / error on file in locales folder', async (t) => {
+      const project = new Project({
+        root,
+        log: false,
+        fallback_locale: 'eng',
+        layout: 'layout/_layout.html',
+      })
+
+      const render = await project.build('project-2')
+      t.fail(stripRoot(await render()))
+    })
+  })
 })
 
 

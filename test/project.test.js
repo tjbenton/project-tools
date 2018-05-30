@@ -263,8 +263,12 @@ test.group('build', (test) => {
         layout: 'layout/_layout.html',
       })
 
-      const render = await project.build('project-2')
-      t.fail(stripRoot(await render()))
+      try {
+        const render = await project.build('project-2')
+        t.fail(stripRoot(await render()))
+      } catch (e) {
+        t.is(e.message, 'All items in the "locales" folder must be folders.')
+      }
     })
   })
 })
